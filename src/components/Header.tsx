@@ -44,10 +44,14 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
           onClick={() => setActiveTab('home')}
           className="flex items-center gap-2 sm:gap-3 cursor-pointer group select-none min-w-0"
         >
-          {/* Retro Among Us Crewmate Mascot Avatar */}
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-[#E5005A] border-2 sm:border-3 border-[#111827] shadow-[2px_2px_0_0_#111827] flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform shrink-0">
-            <div className="w-5 h-3 sm:w-6 sm:h-4 bg-[#00AFC6] border-2 border-[#111827] rounded-full absolute top-1.5 sm:top-2 right-1 sm:right-1.5 shadow-inner"></div>
-            <div className="absolute bottom-0.5 sm:bottom-1 text-[7px] sm:text-[8px] font-pixel text-white">ADG</div>
+          {/* ADG Official Logo */}
+          <div className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center relative group-hover:scale-105 transition-transform shrink-0">
+            <img 
+              src="/adg-logo-full.png" 
+              alt="ADG Logo" 
+              className="w-full h-full object-contain"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/adg-logo.png'; }}
+            />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1 sm:gap-1.5">

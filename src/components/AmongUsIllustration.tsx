@@ -70,6 +70,10 @@ export const AmongUsIllustration: React.FC<IllustrationProps> = ({ onRegisterCli
             <filter id="retroShadow" x="-10%" y="-10%" width="130%" height="130%">
               <feDropShadow dx="3" dy="3" stdDeviation="0" floodColor="#111827" />
             </filter>
+            {/* Clip path for inner table oval disk */}
+            <clipPath id="innerTableDisk">
+              <ellipse cx="450" cy="315" rx="140" ry="40" />
+            </clipPath>
           </defs>
 
           {/* BACKGROUND AMONG US CHARACTERS AROUND TABLE */}
@@ -169,18 +173,21 @@ export const AmongUsIllustration: React.FC<IllustrationProps> = ({ onRegisterCli
 
           {/* Table Center Ring */}
           <ellipse cx="450" cy="315" rx="190" ry="55" fill="#008EA2" stroke="#111827" strokeWidth="4" />
-          <ellipse cx="450" cy="315" rx="140" ry="40" fill="#005B69" stroke="#111827" strokeWidth="3" />
+          <ellipse cx="450" cy="315" rx="140" ry="40" fill="#002b33" stroke="#111827" strokeWidth="3" />
 
-          {/* Table Center Pedestal ADG Logo */}
-          <g transform="translate(380, 290)">
-            <circle cx="70" cy="25" r="32" fill="#111827" stroke="#FFFDF0" strokeWidth="3" />
-            <text x="70" y="24" fill="#00AFC6" fontSize="16" fontFamily="'Press Start 2P', monospace" fontWeight="bold" textAnchor="middle">ADG</text>
-            <text x="70" y="40" fill="#F4C430" fontSize="11" fontFamily="'Silkscreen', monospace" textAnchor="middle">&lt; / &gt;</text>
+          {/* Table Center Pedestal Official ADG Logo (Fitted to inner circle with exact oval perspective angle) */}
+          <g clipPath="url(#innerTableDisk)">
+            <image 
+              href="/adg-logo-full.png" 
+              x="310" 
+              y="275" 
+              width="280" 
+              height="80" 
+              preserveAspectRatio="none"
+            />
           </g>
-
-          {/* Table rim highlights & paint splatters as on poster */}
-          <path d="M 280 345 Q 350 365 420 350" stroke="#E5005A" strokeWidth="8" strokeLinecap="round" />
-          <path d="M 520 350 Q 580 365 630 345" stroke="#F4C430" strokeWidth="7" strokeLinecap="round" />
+          {/* Inner circle rim stroke */}
+          <ellipse cx="450" cy="315" rx="140" ry="40" fill="none" stroke="#111827" strokeWidth="3.5" />
         </svg>
       </div>
 

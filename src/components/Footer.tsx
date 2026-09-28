@@ -17,8 +17,13 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
           {/* Column 1: Event Identity */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#E5005A] border-2 border-white flex items-center justify-center font-pixel text-xs text-white">
-                ADG
+              <div className="w-10 h-10 flex items-center justify-center shrink-0">
+                <img 
+                  src="/adg-logo-full.png" 
+                  alt="ADG Logo" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/adg-logo.png'; }}
+                />
               </div>
               <div>
                 <h3 className="font-arcade text-2xl tracking-widest text-[#F7E8B5]">
