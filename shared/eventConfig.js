@@ -109,15 +109,15 @@ export const EVENT_CONFIG = {
   faqs: [
     {
       q: "Who can participate in DECEPTION?",
-      a: "All engineering and tech students of SFIT are eligible. One team leader will register on behalf of the squad of 5 to 6 players."
+      a: "All engineering and technology students from SFIT and other colleges are eligible to participate. One team leader must register on behalf of a squad consisting of 5 to 6 players."
     },
     {
       q: "How many players are strictly required per team?",
-      a: "A team MUST have exactly 5 or 6 players. Teams with 1–4 players or 7+ players cannot be registered."
+      a: "Each team must consist of exactly 5 or 6 players, including one team leader who will serve as the single point of contact and register on behalf of the entire team."
     },
     {
       q: "What email format is required for registration?",
-      a: "SFIT participants must use their official college email ending with '@student.sfit.ac.in'. Non-college personal emails (like gmail.com) will fail validation."
+      a: "SFIT participants must use their official college email address ending in `@student.sfit.ac.in`. Non-SFIT participants may use any valid email address for registration."
     },
     {
       q: "What documents must be uploaded?",

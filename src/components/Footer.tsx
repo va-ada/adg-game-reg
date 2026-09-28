@@ -146,7 +146,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
             <div className="space-y-2 text-xs font-body pt-1">
               <div className="flex items-center gap-2 text-gray-300">
                 <Mail className="w-4 h-4 text-[#F4C430] shrink-0" />
-                <span className="font-mono text-[11px]">adg@student.sfit.ac.in</span>
+                <span className="font-mono text-[11px]"><a href="mailto:adg@gmail.com">adg@gmail.com</a></span>
               </div>
               <div className="flex items-center gap-2 text-gray-300">
                 <MapPin className="w-4 h-4 text-[#E5005A] shrink-0" />
@@ -174,9 +174,9 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
 
         {/* Bottom copyright */}
         <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 font-display">
-          <p>© 2026 AI Developers Group (ADG) x Mosaic. All rights reserved.</p>
+          <p>© 2026 AI Developers Group (ADG). All rights reserved.</p>
           <p className="flex items-center gap-1 mt-2 sm:mt-0">
-            Engineered for <span className="text-[#F7E8B5] font-bold">St. Francis Institute of Technology</span> • Venue TBD
+            <span className="text-[#F7E8B5] font-bold">St. Francis Institute of Technology</span> • Venue TBD
           </p>
           {/* Organisers need a way in that does not mean remembering a URL, but it
               should not sit in a participant's main navigation either. */}
