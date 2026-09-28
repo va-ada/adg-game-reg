@@ -94,7 +94,7 @@ export const GameInfoPage: React.FC<GameInfoPageProps> = ({ setActiveTab }) => {
       </div>
 
       {/* Schedule and Venue */}
-      <div className="bg-[#FFFDF0] border-4 border-[#111827] shadow-[6px_6px_0_0_#111827] p-6 sm:p-8 space-y-4">
+      {/* <div className="bg-[#FFFDF0] border-4 border-[#111827] shadow-[6px_6px_0_0_#111827] p-6 sm:p-8 space-y-4">
         <h2 className="font-arcade text-xl sm:text-2xl text-[#111827] font-bold flex items-center gap-2">
           <Clock className="w-6 h-6 text-[#E5005A]" />
           EVENT TIMELINE (16–17 OCT 2026)
@@ -115,7 +115,7 @@ export const GameInfoPage: React.FC<GameInfoPageProps> = ({ setActiveTab }) => {
             </p>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* CTA Button */}
       <div className="text-center pt-4">
