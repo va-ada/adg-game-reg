@@ -534,6 +534,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
     { num: 5, title: 'Payment', icon: CreditCard }
   ];
 
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-6 sm:space-y-8">
       {/* Title Header */}
@@ -1028,13 +1035,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
                 </div>
               )}
               <button
-                onClick={prevStep}
+                onClick={() => {
+                          prevStep();
+                          scrollToTop();
+                        }}
                 className="w-full sm:w-auto bg-[#FFFDF0] text-[#111827] font-arcade text-xs px-5 py-3 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] sm:shadow-[3px_3px_0_0_#111827] flex items-center justify-center gap-2 hover:bg-[#F7E8B5]"
               >
                 <ArrowLeft className="w-4 h-4 shrink-0" /> BACK
               </button>
               <button
-                onClick={nextStep}
+                onClick={() => {
+                          nextStep();
+                          scrollToTop();
+                        }}
                 className="w-full sm:w-auto bg-[#111827] text-white font-arcade text-xs sm:text-sm px-6 py-3.5 border-2 border-[#111827] shadow-[3px_3px_0_0_#E5005A] flex items-center justify-center gap-2 hover:bg-[#E5005A] transition-colors"
               >
                 <span>CONTINUE TO ID CARD UPLOAD</span> <ArrowRight className="w-4 h-4 shrink-0" />
@@ -1136,13 +1149,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
 
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 sm:pt-4">
             <button
-              onClick={prevStep}
+              onClick={() => {
+                          prevStep();
+                          scrollToTop();
+                        }}
               className="w-full sm:w-auto bg-[#FFFDF0] text-[#111827] font-arcade text-xs px-5 py-3 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] sm:shadow-[3px_3px_0_0_#111827] flex items-center justify-center gap-2"
             >
               <ArrowLeft className="w-4 h-4 shrink-0" /> BACK
             </button>
             <button
-              onClick={nextStep}
+              onClick={() => {
+                          nextStep();
+                          scrollToTop();
+                        }}
               className="w-full sm:w-auto bg-[#111827] text-white font-arcade text-xs sm:text-sm px-6 py-3.5 border-2 border-[#111827] shadow-[3px_3px_0_0_#E5005A] flex items-center justify-center gap-2 hover:bg-[#E5005A] transition-colors"
             >
               <span>REVIEW REGISTRATION</span> <ArrowRight className="w-4 h-4 shrink-0" />
@@ -1318,7 +1337,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
 
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 sm:pt-4">
             <button
-              onClick={prevStep}
+              onClick={() => {
+                          prevStep();
+                          scrollToTop();
+                        }}
               className="w-full sm:w-auto bg-[#FFFDF0] text-[#111827] font-arcade text-xs px-5 py-3 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] sm:shadow-[3px_3px_0_0_#111827] flex items-center justify-center gap-2"
             >
               <ArrowLeft className="w-4 h-4 shrink-0" /> BACK
@@ -1369,7 +1391,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
             </div>
             <div className="sm:text-right flex items-center justify-between sm:block">
               <span className="text-[10px] font-pixel text-[#00AFC6] block">TOTAL AMOUNT</span>
-              <div className="font-pixel text-xl sm:text-2xl text-[#F4C430]">₹500</div>
+              <div className="font-pixel text-xl sm:text-2xl text-[#F4C430]">₹ {payCfg.perHeadAmount * players.length}</div>
             </div>
           </div>
 

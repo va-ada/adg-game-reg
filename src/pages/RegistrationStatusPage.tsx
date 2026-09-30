@@ -705,7 +705,7 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
                 <div>• Squad Size: {registration.players?.length || 5} Players</div>
                 <div>• Venue: Room 027, St. Francis Institute of Technology</div>
                 <div>• Dates: 16–17 October 2026</div>
-                <div>• Fee Status: PAID (Rs. 500)</div>
+                <div>• Fee Status: PAID </div>
               </div>
               <p>
                 Please ensure all squad members carry their physical or digital SFIT ID cards to the check-in desk at Room 027. Secret roles and tasks will be distributed upon scanning your QR pass.
