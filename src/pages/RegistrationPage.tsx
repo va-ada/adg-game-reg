@@ -1578,10 +1578,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
                       Amount You Paid (₹) *
                     </label>
                     <input
-                      type="number" min="1" step="1"
-                      value={paidAmount}
-                      onChange={(e) => { setPaidAmount(e.target.value); setErrorMsg(null); }}
-                      placeholder="e.g. 100"
+                      type="number"
+                      value={payCfg.perHeadAmount * players.length}
+                      readOnly
                       className="w-full px-4 py-3 bg-[#F7E8B5] border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] font-mono text-sm focus:outline-none"
                     />
                   </div>
