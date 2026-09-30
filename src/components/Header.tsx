@@ -63,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
               </span>
             </div>
             <p className="text-[10px] sm:text-[11px] font-bold text-[#111827]/80 tracking-wide font-display">
-              VENUE TBD • SFIT
+              Room 027 • SFIT
             </p>
           </div>
         </div>

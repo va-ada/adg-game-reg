@@ -66,7 +66,7 @@ export const FaqPage: React.FC<FaqPageProps> = ({ setActiveTab }) => {
         <div>
           <h3 className="font-pixel text-sm sm:text-base">STILL HAVE QUESTIONS?</h3>
           <p className="font-body text-xs mt-1">
-            Visit the AI Developers Group (ADG) desk at SFIT in Venue TBD or contact us at <a href="mailto:adg@gmail.com">adg@gmail.com</a>
+            Visit the AI Developers Group (ADG) desk at SFIT in Room 027 or contact us at <a href="mailto:sfit.aidg@gmail.com">sfit.aidg@gmail.com</a>
 
           </p>
         </div>
