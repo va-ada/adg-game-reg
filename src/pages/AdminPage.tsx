@@ -8,7 +8,8 @@ import {
   verifyAdminPayment, 
   rejectAdminPayment, 
   fetchAuditLogs, 
-  fetchEmailLogs 
+  fetchEmailLogs,
+  downloadAdminExport
 } from '../services/api.ts';
 import { 
   Lock, 
@@ -53,6 +54,7 @@ export const AdminPage: React.FC = () => {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [downloadingExport, setDownloadingExport] = useState<string | null>(null);
 
   // Registration Filters
   const [regSearch, setRegSearch] = useState('');
@@ -65,6 +67,23 @@ export const AdminPage: React.FC = () => {
   // Rejection modal
   const [rejectModalPayment, setRejectModalPayment] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  const getExportUrl = (endpoint: string) => {
+    return token ? `${endpoint}?token=${encodeURIComponent(token)}` : endpoint;
+  };
+
+  const handleDownloadExport = async (e: React.MouseEvent, endpoint: string, filename: string) => {
+    e.preventDefault();
+    if (downloadingExport) return;
+    setDownloadingExport(endpoint);
+    try {
+      await downloadAdminExport(endpoint, filename);
+    } catch (err: any) {
+      alert(err.message || 'Failed to download report');
+    } finally {
+      setDownloadingExport(null);
+    }
+  };
 
   useEffect(() => {
     if (token) {
@@ -247,39 +266,63 @@ export const AdminPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           {/* Individual Excel Reports */}
           <a
-            href="/api/admin/export/all"
+            href={getExportUrl('/api/admin/export/all')}
+            onClick={(e) => handleDownloadExport(e, '/api/admin/export/all', 'DECEPTION_2026_MASTER_REGISTRATIONS.xlsx')}
             download="DECEPTION_2026_MASTER_REGISTRATIONS.xlsx"
             title="Download Master All-in-One Workbook with Overview, Teams, Students & ID Cards, and Payments & Receipts"
-            className="bg-[#4CAF50] text-white font-arcade text-xs px-3 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-[#111827] transition-all flex items-center gap-1.5"
+            className="bg-[#4CAF50] text-white font-arcade text-xs px-3 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-[#111827] transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <FileSpreadsheet className="w-4 h-4" /> MASTER EXCEL
+            {downloadingExport === '/api/admin/export/all' ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-4 h-4" />
+            )}
+            {downloadingExport === '/api/admin/export/all' ? 'DOWNLOADING...' : 'MASTER EXCEL'}
           </a>
 
           <a
-            href="/api/admin/export/teams"
+            href={getExportUrl('/api/admin/export/teams')}
+            onClick={(e) => handleDownloadExport(e, '/api/admin/export/teams', 'DECEPTION_2026_TEAMS_LIST.xlsx')}
             download="DECEPTION_2026_TEAMS_LIST.xlsx"
             title="Download Teams Roster Excel with Squad sizes, Leader contacts, Tickets & Invoices"
-            className="bg-[#00AFC6] text-[#111827] font-arcade text-xs px-3 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-white transition-all flex items-center gap-1.5"
+            className="bg-[#00AFC6] text-[#111827] font-arcade text-xs px-3 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-white transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Users className="w-4 h-4" /> TEAMS LIST (.XLSX)
+            {downloadingExport === '/api/admin/export/teams' ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Users className="w-4 h-4" />
+            )}
+            {downloadingExport === '/api/admin/export/teams' ? 'DOWNLOADING...' : 'TEAMS LIST (.XLSX)'}
           </a>
 
           <a
-            href="/api/admin/export/students"
+            href={getExportUrl('/api/admin/export/students')}
+            onClick={(e) => handleDownloadExport(e, '/api/admin/export/students', 'DECEPTION_2026_STUDENTS_LIST.xlsx')}
             download="DECEPTION_2026_STUDENTS_LIST.xlsx"
             title="Download Students & ID Cards Excel with SFIT & Non-SFIT colleges, ID Card Links, and Tickets"
-            className="bg-[#F4C430] text-[#111827] font-arcade text-xs px-3 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-white transition-all flex items-center gap-1.5"
+            className="bg-[#F4C430] text-[#111827] font-arcade text-xs px-3 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-white transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <FileSpreadsheet className="w-4 h-4" /> STUDENTS &amp; ID CARDS (.XLSX)
+            {downloadingExport === '/api/admin/export/students' ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-4 h-4" />
+            )}
+            {downloadingExport === '/api/admin/export/students' ? 'DOWNLOADING...' : 'STUDENTS & ID CARDS (.XLSX)'}
           </a>
 
           <a
-            href="/api/admin/export/payments"
+            href={getExportUrl('/api/admin/export/payments')}
+            onClick={(e) => handleDownloadExport(e, '/api/admin/export/payments', 'DECEPTION_2026_PAYMENTS_LIST.xlsx')}
             download="DECEPTION_2026_PAYMENTS_LIST.xlsx"
             title="Download Payments Roster Excel with UTR numbers, Invoices, Receipts, and verification timestamps"
-            className="bg-[#E5005A] text-white font-arcade text-xs px-3 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-[#111827] transition-all flex items-center gap-1.5"
+            className="bg-[#E5005A] text-white font-arcade text-xs px-3 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-[#111827] transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <FileSpreadsheet className="w-4 h-4" /> PAYMENTS &amp; RECEIPTS (.XLSX)
+            {downloadingExport === '/api/admin/export/payments' ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-4 h-4" />
+            )}
+            {downloadingExport === '/api/admin/export/payments' ? 'DOWNLOADING...' : 'PAYMENTS & RECEIPTS (.XLSX)'}
           </a>
 
           <button
@@ -369,7 +412,7 @@ export const AdminPage: React.FC = () => {
               ORGANIZER OPERATIONAL SUMMARY
             </h3>
             <p className="text-xs font-body text-[#111827]/90 leading-relaxed">
-              DECEPTION matches take place on <strong>16 & 17 October 2026</strong> in <strong>Room 027</strong>. All squads have 5 or 6 participants. When payments are confirmed, ticket QR codes are automatically generated for seamless check-in at the entrance.
+              DECEPTION matches take place on <strong>16 & 17 October 2026</strong> in <strong>Room 028</strong>. All squads have 5 or 6 participants. When payments are confirmed, ticket QR codes are automatically generated for seamless check-in at the entrance.
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
               <button
@@ -435,11 +478,17 @@ export const AdminPage: React.FC = () => {
             </button>
 
             <a
-              href="/api/admin/export/teams"
+              href={getExportUrl('/api/admin/export/teams')}
+              onClick={(e) => handleDownloadExport(e, '/api/admin/export/teams', 'DECEPTION_2026_TEAMS_LIST.xlsx')}
               download="DECEPTION_2026_TEAMS_LIST.xlsx"
-              className="px-3.5 py-2 bg-[#00AFC6] text-[#111827] font-arcade text-xs border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-white flex items-center gap-1.5 shrink-0"
+              className="px-3.5 py-2 bg-[#00AFC6] text-[#111827] font-arcade text-xs border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-white flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
-              <Users className="w-3.5 h-3.5" /> EXPORT TEAMS (.XLSX)
+              {downloadingExport === '/api/admin/export/teams' ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Users className="w-3.5 h-3.5" />
+              )}
+              {downloadingExport === '/api/admin/export/teams' ? 'DOWNLOADING...' : 'EXPORT TEAMS (.XLSX)'}
             </a>
           </div>
 
@@ -523,11 +572,17 @@ export const AdminPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <a
-                href="/api/admin/export/payments"
+                href={getExportUrl('/api/admin/export/payments')}
+                onClick={(e) => handleDownloadExport(e, '/api/admin/export/payments', 'DECEPTION_2026_PAYMENTS_LIST.xlsx')}
                 download="DECEPTION_2026_PAYMENTS_LIST.xlsx"
-                className="bg-[#E5005A] text-white font-arcade text-xs px-3.5 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-[#111827] transition-all flex items-center gap-1.5"
+                className="bg-[#E5005A] text-white font-arcade text-xs px-3.5 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-[#111827] transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <FileSpreadsheet className="w-4 h-4" /> EXPORT PAYMENTS (.XLSX)
+                {downloadingExport === '/api/admin/export/payments' ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="w-4 h-4" />
+                )}
+                {downloadingExport === '/api/admin/export/payments' ? 'DOWNLOADING...' : 'EXPORT PAYMENTS (.XLSX)'}
               </a>
               <span className="bg-[#00AFC6] text-white font-pixel text-xs px-3 py-1 border-2 border-[#111827]">
                 {pendingPayments.length} PENDING
@@ -607,11 +662,17 @@ export const AdminPage: React.FC = () => {
               </p>
             </div>
             <a
-              href="/api/admin/export/students"
+              href={getExportUrl('/api/admin/export/students')}
+              onClick={(e) => handleDownloadExport(e, '/api/admin/export/students', 'DECEPTION_2026_STUDENTS_LIST.xlsx')}
               download="DECEPTION_2026_STUDENTS_LIST.xlsx"
-              className="bg-[#F4C430] text-[#111827] font-arcade text-xs px-4 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-white transition-all flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+              className="bg-[#F4C430] text-[#111827] font-arcade text-xs px-4 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-white transition-all flex items-center gap-1.5 self-start sm:self-auto shrink-0 cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4" /> EXPORT STUDENTS &amp; ID CARDS (.XLSX)
+              {downloadingExport === '/api/admin/export/students' ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4" />
+              )}
+              {downloadingExport === '/api/admin/export/students' ? 'DOWNLOADING...' : 'EXPORT STUDENTS & ID CARDS (.XLSX)'}
             </a>
           </div>
 

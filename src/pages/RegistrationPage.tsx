@@ -547,7 +547,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
       <div className="bg-[#FFFDF0] border-3 sm:border-4 border-[#111827] shadow-[4px_4px_0_0_#111827] sm:shadow-[6px_6px_0_0_#111827] p-4 sm:p-6 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <span className="bg-[#E5005A] text-white font-pixel text-[10px] sm:text-xs px-2.5 py-0.5 sm:py-1 border-2 border-[#111827] inline-block">
-            Room 027 ENTRANCE
+            Room 028 ENTRANCE
           </span>
           <h1 className="font-pixel text-xl sm:text-3xl text-[#111827] mt-2 tracking-wider">
             SQUAD REGISTRATION
@@ -686,7 +686,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
                 type="text"
                 value={teamName}
                 onChange={(e) => { setTeamName(e.target.value); setErrorMsg(null); }}
-                placeholder="e.g. The Suspects, Room 027 Crew, Binary Imposters"
+                placeholder="e.g. The Suspects, Room 028 Crew, Binary Imposters"
                 className="w-full px-3.5 py-2.5 sm:px-4 sm:py-3 bg-[#FFFDF0] border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] sm:shadow-[3px_3px_0_0_#111827] font-body text-xs sm:text-sm focus:outline-none focus:bg-[#FFF]"
               />
             </div>
@@ -1067,7 +1067,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
               STEP 3: COLLEGE IDENTITY CARD UPLOADS
             </h2>
             <p className="text-xs font-body text-[#111827]/80">
-              Upload photo/scan of college identity cards to ensure verification at Room 027 entrance.
+              Upload photo/scan of college identity cards to ensure verification at Room 028 entrance.
             </p>
           </div>
 
@@ -1195,7 +1195,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
               <span className="text-[10px] font-pixel text-[#E5005A] uppercase">SQUAD NAME</span>
               <h3 className="font-pixel text-base sm:text-xl text-[#111827]">{teamName}</h3>
               <p className="text-xs font-body text-[#111827]/80 mt-0.5">
-                Size: {teamSize} Players • Venue: Room 027 • Event: 16–17 Oct 2026
+                Size: {teamSize} Players • Venue: Room 028 • Event: 16–17 Oct 2026
               </p>
             </div>
             <button

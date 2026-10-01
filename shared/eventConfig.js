@@ -14,7 +14,7 @@ export const EVENT_CONFIG = {
   eventDateDisplay: "16, 17 OCT 2026",
   startDate: "2026-10-16",
   endDate: "2026-10-17",
-  venue: "Room 027",
+  venue: "Room 028",
   college: "St. Francis Institute of Technology (SFIT)",
   
   teamConfig: {
@@ -46,7 +46,7 @@ export const EVENT_CONFIG = {
       number: "01",
       title: "COMPLETE YOUR TASKS",
       subtitle: "Execute Objectives",
-      description: "Work across tech labs and stations in Room 027 completing tasks before time expires.",
+      description: "Work across tech labs and stations in Room 028 completing tasks before time expires.",
       color: "#E5005A", // Magenta
       icon: "Search"
     },
@@ -90,7 +90,7 @@ export const EVENT_CONFIG = {
     },
     {
       category: "College ID Verification",
-      rule: "Valid college identity cards must be uploaded during registration and physically presented at Room 027 desk on event day."
+      rule: "Valid college identity cards must be uploaded during registration and physically presented at Room 028 desk on event day."
     },
     {
       category: "Game Mechanics & Fair Play",
@@ -133,7 +133,7 @@ export const EVENT_CONFIG = {
     },
     {
       q: "Where and when is the event happening?",
-      a: "DECEPTION takes place on 16th and 17th October 2026 at St. Francis Institute of Technology (SFIT), Room 027."
+      a: "DECEPTION takes place on 16th and 17th October 2026 at St. Francis Institute of Technology (SFIT), Room 028."
     }
   ]
 };

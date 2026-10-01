@@ -194,3 +194,40 @@ export async function fetchEmailLogs() {
   const json = await res.json();
   return json.emails ?? [];
 }
+
+export async function downloadAdminExport(endpoint: string, fallbackFileName: string): Promise<void> {
+  const token = localStorage.getItem('deception_admin_token');
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+  const queryPrefix = endpoint.includes('?') ? '&' : '?';
+  const url = token ? `${endpoint}${queryPrefix}token=${encodeURIComponent(token)}` : endpoint;
+
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    let errMsg = `Export download failed (Status: ${res.status})`;
+    try {
+      const json = await res.json();
+      if (json.message) errMsg = json.message;
+    } catch {}
+    throw new Error(errMsg);
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition');
+  let filename = fallbackFileName;
+  if (disposition && disposition.includes('filename=')) {
+    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    if (match && match[1]) {
+      filename = match[1].replace(/['"]/g, '').trim();
+    }
+  }
+
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+}
+

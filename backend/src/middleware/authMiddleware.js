@@ -8,16 +8,21 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'deception_adg_jwt_secret_2026_super_secure_key';
 
 export function authenticateAdmin(req, res, next) {
+  let token = null;
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query && req.query.token) {
+    token = String(req.query.token);
+  }
+
+  if (!token) {
     return res.status(401).json({
       success: false,
       message: 'Unauthorized: Missing or malformed Authorization header'
     });
   }
-
-  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
