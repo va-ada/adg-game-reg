@@ -1,33 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  adminLogin, 
-  fetchAdminDashboard, 
-  fetchAdminRegistrations, 
-  fetchAdminStudents, 
-  fetchAdminPayments, 
-  verifyAdminPayment, 
-  rejectAdminPayment, 
-  fetchAuditLogs, 
+import {
+  adminLogin,
+  fetchAdminDashboard,
+  fetchAdminRegistrations,
+  fetchAdminStudents,
+  fetchAdminPayments,
+  verifyAdminPayment,
+  rejectAdminPayment,
+  fetchAuditLogs,
   fetchEmailLogs,
   downloadAdminExport
 } from '../services/api.ts';
-import { 
-  Lock, 
-  ShieldCheck, 
-  Users, 
-  CheckCircle, 
-  Clock, 
-  AlertCircle, 
-  Search, 
-  Download, 
-  Eye, 
-  Check, 
-  X, 
-  Mail, 
-  FileSpreadsheet, 
-  LogOut, 
+import {
+  Lock,
+  ShieldCheck,
+  Users,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Search,
+  Download,
+  Eye,
+  Check,
+  X,
+  Mail,
+  FileSpreadsheet,
+  LogOut,
   Filter,
-  RefreshCw
+  RefreshCw,
+  ExternalLink,
+  Image as ImageIcon,
+  ZoomIn,
+  Copy,
+  Phone,
+  GraduationCap,
+  IndianRupee,
+  Ticket,
+  ArrowRight
 } from 'lucide-react';
 
 export const AdminPage: React.FC = () => {
@@ -56,15 +65,18 @@ export const AdminPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [downloadingExport, setDownloadingExport] = useState<string | null>(null);
 
-  // Registration Filters
+  // Registration Filters (payment-centric)
   const [regSearch, setRegSearch] = useState('');
-  const [regStatusFilter, setRegStatusFilter] = useState('');
+  const [regPaymentFilter, setRegPaymentFilter] = useState<'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED'>('ALL');
   const [regSizeFilter, setRegSizeFilter] = useState('');
 
-  // Selected Registration Modal
+  // Selected Registration detail modal
   const [selectedReg, setSelectedReg] = useState<any | null>(null);
+  const [selectedRegPayment, setSelectedRegPayment] = useState<any | null>(null);
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const [copiedUTR, setCopiedUTR] = useState(false);
 
-  // Rejection modal
+  // Rejection modal (kept for compat, but primary desk is the dedicated page)
   const [rejectModalPayment, setRejectModalPayment] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
@@ -116,23 +128,16 @@ export const AdminPage: React.FC = () => {
   const loadAllAdminData = async () => {
     setLoading(true);
     try {
-      // The tab bar shows counts, so the stats must load whatever tab is open.
-      // Fetching them only on 'overview' meant the bar read "Payment Desk (0 Pending)"
-      // while squads were actually waiting - the one number an organiser acts on.
       fetchAdminDashboard().then(setDashboardData).catch(() => {});
 
-      if (activeTab === 'overview') {
-        // stats already requested above
-      } else if (activeTab === 'registrations') {
-        const regs = await fetchAdminRegistrations({
-          search: regSearch,
-          status: regStatusFilter,
-          teamSize: regSizeFilter
-        });
+      if (activeTab === 'registrations') {
+        // Load both registrations and payments so we can join them
+        const [regs, pays] = await Promise.all([
+          fetchAdminRegistrations({ search: regSearch, teamSize: regSizeFilter }),
+          fetchAdminPayments()
+        ]);
         setRegistrations(regs);
-      } else if (activeTab === 'verification') {
-        const pList = await fetchAdminPayments();
-        setPayments(pList);
+        setPayments(pays);
       } else if (activeTab === 'students') {
         const sList = await fetchAdminStudents();
         setStudents(sList);
@@ -151,6 +156,36 @@ export const AdminPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Derive payment status label (simple 3-state: Approved / Pending / Rejected)
+  const getPaymentLabel = (pay: any): { label: string; color: string; bg: string } => {
+    if (!pay) return { label: 'PENDING', color: '#92400e', bg: '#fef3c7' };
+    if (pay.status === 'PAID') return { label: 'APPROVED', color: '#166534', bg: '#dcfce7' };
+    if (pay.status === 'REJECTED') return { label: 'REJECTED', color: '#991b1b', bg: '#fee2e2' };
+    return { label: 'PENDING', color: '#92400e', bg: '#fef3c7' };
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedUTR(true);
+    setTimeout(() => setCopiedUTR(false), 1800);
+  };
+
+  // Client-side filter registrations by payment status
+  const filteredRegistrations = registrations.filter(reg => {
+    const pay = payments.find(p => p.registrationId === reg.registrationId);
+    if (regPaymentFilter === 'ALL') return true;
+    if (regPaymentFilter === 'APPROVED') return pay?.status === 'PAID';
+    if (regPaymentFilter === 'REJECTED') return pay?.status === 'REJECTED';
+    if (regPaymentFilter === 'PENDING') return !pay || !['PAID','REJECTED'].includes(pay?.status);
+    return true;
+  }).filter(reg => {
+    if (!regSearch.trim()) return true;
+    const q = regSearch.toLowerCase();
+    return [
+      reg.registrationId, reg.teamName, reg.leaderName, reg.contactEmail
+    ].some(v => String(v || '').toLowerCase().includes(q));
+  });
 
   const handleVerifyPayment = async (paymentId: string) => {
     try {
@@ -339,7 +374,7 @@ export const AdminPage: React.FC = () => {
         {[
           { id: 'overview', label: 'Dashboard Overview' },
           { id: 'registrations', label: `Registrations (${dashboardData?.totalRegistrations ?? '...'})` },
-          { id: 'verification', label: `Payment Desk (${dashboardData?.pendingVerification ?? pendingPayments.length} Pending)` },
+          { id: 'verification', label: `Payment Desk ↗` },
           { id: 'students', label: `Participants (${dashboardData?.totalParticipants ?? students.length})` },
           { id: 'audit', label: 'Audit Trail' },
           { id: 'emails', label: 'Email Dispatches' }
@@ -438,43 +473,57 @@ export const AdminPage: React.FC = () => {
       {activeTab === 'registrations' && (
         <div className="space-y-4">
           {/* Filters Bar */}
-          <div className="bg-[#FFFDF0] border-3 border-[#111827] p-4 shadow-[3px_3px_0_0_#111827] flex flex-col sm:flex-row gap-3">
+          <div className="bg-[#FFFDF0] border-3 border-[#111827] p-4 shadow-[3px_3px_0_0_#111827] flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+            {/* Search */}
             <div className="flex-1 relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#111827]/40" />
               <input
                 type="text"
                 value={regSearch}
                 onChange={(e) => setRegSearch(e.target.value)}
-                placeholder="Search by code, team name, or email..."
-                className="w-full px-3 py-2 bg-[#F7E8B5] border-2 border-[#111827] text-xs font-body"
+                onKeyDown={(e) => e.key === 'Enter' && loadAllAdminData()}
+                placeholder="Search by team name, leader, email, or registration ID…"
+                className="w-full pl-9 pr-3 py-2.5 bg-[#F7E8B5] border-2 border-[#111827] text-xs font-body focus:outline-none focus:ring-2 focus:ring-[#E5005A]"
               />
             </div>
 
-            <select
-              value={regStatusFilter}
-              onChange={(e) => setRegStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-[#F7E8B5] border-2 border-[#111827] text-xs font-arcade"
-            >
-              <option value="">All Statuses</option>
-              <option value="CONFIRMED">CONFIRMED</option>
-              <option value="PAYMENT_PENDING">PAYMENT_PENDING</option>
-              <option value="CANCELLED">CANCELLED</option>
-            </select>
+            {/* Payment Status filter — 3 simple states */}
+            <div className="flex border-2 border-[#111827] overflow-hidden shrink-0">
+              {(['ALL', 'APPROVED', 'PENDING', 'REJECTED'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setRegPaymentFilter(f)}
+                  className={`px-3 py-2 text-[10px] font-arcade transition-colors ${
+                    regPaymentFilter === f
+                      ? f === 'APPROVED' ? 'bg-[#16a34a] text-white'
+                        : f === 'REJECTED' ? 'bg-[#dc2626] text-white'
+                        : f === 'PENDING' ? 'bg-[#d97706] text-white'
+                        : 'bg-[#111827] text-white'
+                      : 'bg-[#FFFDF0] text-[#111827] hover:bg-[#F7E8B5]'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
 
+            {/* Squad size */}
             <select
               value={regSizeFilter}
               onChange={(e) => setRegSizeFilter(e.target.value)}
-              className="px-3 py-2 bg-[#F7E8B5] border-2 border-[#111827] text-xs font-arcade"
+              className="px-3 py-2 bg-[#F7E8B5] border-2 border-[#111827] text-xs font-arcade shrink-0"
             >
-              <option value="">All Squad Sizes</option>
+              <option value="">All Sizes</option>
               <option value="5">5 Players</option>
               <option value="6">6 Players</option>
             </select>
 
             <button
               onClick={loadAllAdminData}
-              className="px-4 py-2 bg-[#111827] text-white font-arcade text-xs border-2 border-[#111827] hover:bg-gray-800"
+              disabled={loading}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#111827] text-white font-arcade text-xs border-2 border-[#111827] hover:bg-gray-800 disabled:opacity-50 shrink-0"
             >
-              REFRESH
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> REFRESH
             </button>
 
             <a
@@ -483,73 +532,78 @@ export const AdminPage: React.FC = () => {
               download="DECEPTION_2026_TEAMS_LIST.xlsx"
               className="px-3.5 py-2 bg-[#00AFC6] text-[#111827] font-arcade text-xs border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-white flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
-              {downloadingExport === '/api/admin/export/teams' ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Users className="w-3.5 h-3.5" />
-              )}
-              {downloadingExport === '/api/admin/export/teams' ? 'DOWNLOADING...' : 'EXPORT TEAMS (.XLSX)'}
+              {downloadingExport === '/api/admin/export/teams' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />}
+              {downloadingExport === '/api/admin/export/teams' ? 'DOWNLOADING...' : 'EXPORT (.XLSX)'}
             </a>
           </div>
+
+          {/* Summary count */}
+          <p className="text-xs font-mono text-[#111827]/50">
+            Showing <strong>{filteredRegistrations.length}</strong> of {registrations.length} registrations
+          </p>
 
           {/* Table */}
           <div className="bg-[#FFFDF0] border-3 border-[#111827] shadow-[4px_4px_0_0_#111827] overflow-x-auto">
             <table className="w-full text-left text-xs font-body border-collapse">
               <thead>
                 <tr className="bg-[#111827] text-white font-arcade">
-                  <th className="p-3">Code</th>
+                  <th className="p-3">Reg. ID</th>
                   <th className="p-3">Squad Name</th>
                   <th className="p-3">Size</th>
                   <th className="p-3">Leader</th>
-                  <th className="p-3">Registration Status</th>
                   <th className="p-3">Payment Status</th>
-                  <th className="p-3">Created</th>
-                  <th className="p-3 text-right">Action</th>
+                  <th className="p-3">Date</th>
+                  <th className="p-3 text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#111827]">
-                {registrations.map((reg) => (
-                  <tr key={reg.registrationId} className="hover:bg-[#F7E8B5]/50">
-                    <td className="p-3 font-mono font-bold text-[#E5005A]">
-                      {reg.registrationId}
-                    </td>
-                    <td className="p-3 font-bold">{reg.teamName}</td>
-                    <td className="p-3">{reg.teamSize || reg.players?.length || 5}P</td>
-                    <td className="p-3">
-                      <div>{reg.leaderName}</div>
-                      <div className="text-gray-500 text-[10px] font-mono">{reg.contactEmail}</div>
-                    </td>
-                    <td className="p-3">
-                      <span className={`px-2 py-0.5 border border-[#111827] font-pixel text-[9px] ${
-                        reg.status === 'CONFIRMED' ? 'bg-[#4CAF50] text-white' : 'bg-[#F4C430] text-[#111827]'
-                      }`}>
-                        {reg.status}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <span className={`px-2 py-0.5 border border-[#111827] font-pixel text-[9px] ${
-                        reg.payment?.status === 'PAID'
-                          ? 'bg-[#4CAF50] text-white'
-                          : reg.payment?.status === 'PENDING_VERIFICATION'
-                          ? 'bg-[#00AFC6] text-white'
-                          : 'bg-[#E5005A] text-white'
-                      }`}>
-                        {reg.payment?.status || 'PENDING'}
-                      </span>
-                    </td>
-                    <td className="p-3 text-gray-600 text-[11px]">
-                      {new Date(reg.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="p-3 text-right">
-                      <button
-                        onClick={() => setSelectedReg(reg)}
-                        className="px-2.5 py-1 bg-[#00AFC6] text-[#111827] border-2 border-[#111827] font-arcade text-[10px] hover:bg-white"
-                      >
-                        VIEW DETAILS
-                      </button>
+                {filteredRegistrations.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center font-arcade text-xs text-[#111827]/40">
+                      NO REGISTRATIONS MATCH YOUR FILTER
                     </td>
                   </tr>
-                ))}
+                )}
+                {filteredRegistrations.map((reg) => {
+                  const pay = payments.find(p => p.registrationId === reg.registrationId);
+                  const { label: payLabel, color: payColor, bg: payBg } = getPaymentLabel(pay);
+                  return (
+                    <tr key={reg.registrationId} className="hover:bg-[#F7E8B5]/50">
+                      <td className="p-3 font-mono font-bold text-[#E5005A] whitespace-nowrap">
+                        {reg.registrationId}
+                      </td>
+                      <td className="p-3 font-bold">{reg.teamName}</td>
+                      <td className="p-3 whitespace-nowrap">{reg.teamSize || 5}P</td>
+                      <td className="p-3">
+                        <div className="font-bold">{reg.leaderName}</div>
+                        <div className="text-gray-500 text-[10px] font-mono">{reg.contactEmail}</div>
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className="px-2 py-0.5 border font-pixel text-[9px] font-bold"
+                          style={{ color: payColor, borderColor: payColor, backgroundColor: payBg }}
+                        >
+                          {payLabel}
+                        </span>
+                      </td>
+                      <td className="p-3 text-gray-500 text-[11px] whitespace-nowrap">
+                        {new Date(reg.createdAt).toLocaleDateString('en-IN')}
+                      </td>
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => {
+                            setSelectedReg(reg);
+                            setSelectedRegPayment(pay || null);
+                            setCopiedUTR(false);
+                          }}
+                          className="px-2.5 py-1.5 bg-[#00AFC6] text-[#111827] border-2 border-[#111827] font-arcade text-[10px] hover:bg-white flex items-center gap-1 ml-auto"
+                        >
+                          <Eye className="w-3 h-3" /> VIEW
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -557,93 +611,52 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* ---------------------------------------------------- */}
-      {/* 3. PAYMENT VERIFICATION DESK */}
+      {/* 3. PAYMENT DESK (redirect to dedicated page) */}
       {/* ---------------------------------------------------- */}
       {activeTab === 'verification' && (
         <div className="space-y-4">
-          <div className="bg-[#FFFDF0] border-3 border-[#111827] p-5 shadow-[4px_4px_0_0_#111827] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-[#FFFDF0] border-3 border-[#111827] shadow-[6px_6px_0_0_#111827] p-8 text-center space-y-4">
+            <div className="w-16 h-16 bg-[#E5005A] border-3 border-[#111827] mx-auto flex items-center justify-center">
+              <ShieldCheck className="w-8 h-8 text-white" />
+            </div>
             <div>
-              <h3 className="font-arcade text-base font-bold text-[#111827]">
-                MANUAL UPI VERIFICATION QUEUE
-              </h3>
-              <p className="text-xs font-body text-gray-600">
-                Review bank UTR numbers and screenshots. Approving a payment marks the squad CONFIRMED and generates their ticket QR pass.
+              <h3 className="font-pixel text-lg text-[#111827]">PAYMENT APPROVAL DESK</h3>
+              <p className="text-sm font-body text-[#111827]/70 mt-2 max-w-md mx-auto">
+                All payment verification — approvals, rejections, UPI screenshot review, and team rosters — happens
+                on the dedicated <strong>Payment Desk</strong> page.
+              </p>
+              <p className="text-xs font-body text-[#111827]/50 mt-1">
+                Approving a team sends the entry ticket to the leader's email. Rejecting sends a notification with your contact info.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <a
-                href={getExportUrl('/api/admin/export/payments')}
-                onClick={(e) => handleDownloadExport(e, '/api/admin/export/payments', 'DECEPTION_2026_PAYMENTS_LIST.xlsx')}
-                download="DECEPTION_2026_PAYMENTS_LIST.xlsx"
-                className="bg-[#E5005A] text-white font-arcade text-xs px-3.5 py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-[#111827] transition-all flex items-center gap-1.5 cursor-pointer"
+                href="?payments"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 bg-[#111827] text-white font-arcade text-sm px-6 py-3 border-3 border-[#111827] shadow-[4px_4px_0_0_#E5005A] hover:bg-[#E5005A] transition-colors"
               >
-                {downloadingExport === '/api/admin/export/payments' ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <FileSpreadsheet className="w-4 h-4" />
-                )}
-                {downloadingExport === '/api/admin/export/payments' ? 'DOWNLOADING...' : 'EXPORT PAYMENTS (.XLSX)'}
+                OPEN PAYMENT DESK <ArrowRight className="w-4 h-4" />
               </a>
-              <span className="bg-[#00AFC6] text-white font-pixel text-xs px-3 py-1 border-2 border-[#111827]">
-                {pendingPayments.length} PENDING
-              </span>
+              <span className="text-xs font-mono text-[#111827]/40">Opens in a new tab · URL: ?payments</span>
             </div>
           </div>
 
-          {pendingPayments.length === 0 ? (
-            <div className="bg-[#F7E8B5] border-3 border-[#111827] p-8 text-center font-arcade text-sm text-[#111827]">
-              ✓ No pending UPI payments requiring verification.
+          {/* Quick stats */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-[#FFFDF0] border-3 border-[#111827] p-4 text-center">
+              <p className="font-pixel text-2xl text-[#d97706]">{dashboardData?.pendingVerification ?? '…'}</p>
+              <p className="text-[10px] font-arcade text-[#111827]/50 mt-1">AWAITING REVIEW</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {pendingPayments.map((p) => (
-                <div
-                  key={p.paymentId}
-                  className="bg-[#FFFDF0] border-3 border-[#111827] shadow-[4px_4px_0_0_#111827] p-5 space-y-3 text-xs font-body"
-                >
-                  <div className="flex items-center justify-between border-b border-[#111827] pb-2">
-                    <span className="font-mono font-bold text-[#E5005A] text-sm">
-                      {p.registrationCode || p.registrationId}
-                    </span>
-                    <span className="font-pixel text-xs bg-[#F4C430] px-2 py-0.5 border border-[#111827]">
-                      ₹{p.amount}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div><strong>Squad:</strong> {p.teamName || 'Squad Team'}</div>
-                    <div><strong>Submitted UTR:</strong> <span className="font-mono bg-[#F7E8B5] px-1 border border-[#111827] font-bold">{p.transactionReference}</span></div>
-                    <div><strong>Provider:</strong> {p.provider}</div>
-                    <div><strong>Submitted At:</strong> {new Date(p.createdAt).toLocaleString()}</div>
-                  </div>
-
-                  {p.evidenceUrl && (
-                    <div className="pt-1">
-                      <span className="text-[10px] font-pixel text-gray-500 block mb-1">PAYMENT SCREENSHOT:</span>
-                      <a href={p.evidenceUrl} target="_blank" rel="noreferrer" className="block w-full h-32 border-2 border-[#111827] overflow-hidden bg-white hover:opacity-90">
-                        <img src={p.evidenceUrl} alt="UTR proof" className="w-full h-full object-contain" />
-                      </a>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => handleVerifyPayment(p.paymentId)}
-                      className="flex-1 bg-[#4CAF50] text-white font-arcade text-xs py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-[#111827] transition-all flex items-center justify-center gap-1"
-                    >
-                      <Check className="w-4 h-4" /> VERIFY PAYMENT
-                    </button>
-                    <button
-                      onClick={() => setRejectModalPayment(p)}
-                      className="px-3 bg-[#E5005A] text-white font-arcade text-xs py-2 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] hover:bg-[#111827] transition-all flex items-center gap-1"
-                    >
-                      <X className="w-4 h-4" /> REJECT
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-[#FFFDF0] border-3 border-[#111827] p-4 text-center">
+              <p className="font-pixel text-2xl text-[#16a34a]">{dashboardData?.confirmedRegistrations ?? '…'}</p>
+              <p className="text-[10px] font-arcade text-[#111827]/50 mt-1">APPROVED</p>
             </div>
-          )}
+            <div className="bg-[#FFFDF0] border-3 border-[#111827] p-4 text-center">
+              <p className="font-pixel text-2xl text-[#dc2626]">{dashboardData?.rejectedRegistrations ?? '…'}</p>
+              <p className="text-[10px] font-arcade text-[#111827]/50 mt-1">REJECTED</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -818,87 +831,243 @@ export const AdminPage: React.FC = () => {
       {/* ---------------------------------------------------- */}
       {/* REGISTRATION DETAIL MODAL */}
       {/* ---------------------------------------------------- */}
+      {/* Screenshot zoom modal */}
+      {screenshotUrl && (
+        <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-4"
+          onClick={() => setScreenshotUrl(null)}>
+          <div className="bg-white border-4 border-[#111827] shadow-[8px_8px_0_0_#000] max-w-xl w-full"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 bg-[#111827] text-white">
+              <span className="font-pixel text-xs">UPI PAYMENT SCREENSHOT</span>
+              <div className="flex items-center gap-2">
+                <a href={screenshotUrl} target="_blank" rel="noreferrer"
+                  className="text-xs flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2 py-1">
+                  <ExternalLink className="w-3 h-3" /> Open original
+                </a>
+                <button onClick={() => setScreenshotUrl(null)}
+                  className="w-6 h-6 flex items-center justify-center bg-white/10 hover:bg-[#E5005A]">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="p-2 max-h-[78vh] overflow-auto bg-[#f3f4f6] flex items-center justify-center">
+              <img src={screenshotUrl} alt="UPI screenshot"
+                className="max-w-full h-auto object-contain" style={{ maxHeight: '70vh' }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Registration detail modal */}
       {selectedReg && (
         <div className="fixed inset-0 z-50 bg-[#111827]/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#FFFDF0] border-4 border-[#111827] shadow-[8px_8px_0_0_#000] max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4 text-xs font-body">
-            <div className="flex items-center justify-between border-b-2 border-[#111827] pb-3">
+          <div className="bg-[#FFFDF0] border-4 border-[#111827] shadow-[8px_8px_0_0_#000] max-w-3xl w-full max-h-[90vh] overflow-y-auto text-xs font-body">
+
+            {/* Modal header */}
+            <div className="flex items-center justify-between border-b-2 border-[#111827] px-6 py-4 sticky top-0 bg-[#111827] z-10">
               <div>
-                <span className="font-pixel text-[10px] text-[#E5005A]">
-                  REGISTRATION INSPECTOR
-                </span>
-                <h3 className="font-pixel text-xl text-[#111827]">
-                  {selectedReg.registrationId} • {selectedReg.teamName}
+                <span className="font-pixel text-[9px] text-[#E5005A]">TEAM DETAILS</span>
+                <h3 className="font-pixel text-base text-white">
+                  {selectedReg.registrationId} · {selectedReg.teamName}
                 </h3>
               </div>
-              <button
-                onClick={() => setSelectedReg(null)}
-                className="p-1 border-2 border-[#111827] bg-[#F7E8B5]"
-              >
-                <X className="w-5 h-5" />
+              <button onClick={() => setSelectedReg(null)}
+                className="p-1.5 border-2 border-white/30 bg-white/10 hover:bg-[#E5005A]">
+                <X className="w-4 h-4 text-white" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#F7E8B5] p-4 border-2 border-[#111827]">
-              <div>
-                <div><strong>Leader:</strong> {selectedReg.leaderName}</div>
-                <div><strong>Email:</strong> {selectedReg.contactEmail}</div>
-                <div><strong>Mobile:</strong> {selectedReg.contactPhone}</div>
+            <div className="p-6 space-y-6">
+              {/* Leader info + payment status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-[#F7E8B5] border-2 border-[#111827] p-4 space-y-1.5">
+                  <p className="font-arcade text-[10px] font-bold text-[#111827]/50 mb-2">TEAM LEADER</p>
+                  <p className="font-bold text-sm">{selectedReg.leaderName}</p>
+                  <p className="font-mono text-[11px] text-[#111827]/60">{selectedReg.contactEmail}</p>
+                  {selectedReg.contactMobile && (
+                    <p className="font-mono text-[11px] text-[#111827]/60">{selectedReg.contactMobile}</p>
+                  )}
+                  <p className="text-[11px] text-[#111827]/50 mt-1">Team size: {selectedReg.teamSize || 5} players</p>
+                </div>
+                <div className="bg-[#F7E8B5] border-2 border-[#111827] p-4 space-y-2">
+                  <p className="font-arcade text-[10px] font-bold text-[#111827]/50 mb-2">PAYMENT STATUS</p>
+                  {selectedRegPayment ? (
+                    <>
+                      {(() => {
+                        const { label, color, bg } = getPaymentLabel(selectedRegPayment);
+                        return (
+                          <span className="inline-block px-3 py-1 font-pixel text-xs border-2 font-bold"
+                            style={{ color, borderColor: color, backgroundColor: bg }}>
+                            {label}
+                          </span>
+                        );
+                      })()}
+                      <p className="text-[11px]"><strong>Amount:</strong> ₹{Number(selectedRegPayment.amountExpected || selectedRegPayment.amount).toLocaleString('en-IN')}</p>
+                      <p className="text-[11px]"><strong>Method:</strong> {selectedRegPayment.method || 'UPI'}</p>
+                      {selectedRegPayment.verifiedAt && (
+                        <p className="text-[11px] text-[#16a34a]">
+                          Approved {new Date(selectedRegPayment.verifiedAt).toLocaleString('en-IN')}
+                        </p>
+                      )}
+                      {selectedRegPayment.ticketNumber && (
+                        <p className="text-[11px] flex items-center gap-1 text-[#16a34a] font-bold">
+                          <Ticket className="w-3 h-3" /> {selectedRegPayment.ticketNumber}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <span className="inline-block px-3 py-1 font-pixel text-xs border-2 font-bold"
+                      style={{ color: '#92400e', borderColor: '#d97706', backgroundColor: '#fef3c7' }}>
+                      NO PAYMENT YET
+                    </span>
+                  )}
+                </div>
               </div>
-              <div>
-                <div><strong>Registration Status:</strong> {selectedReg.status}</div>
-                <div><strong>Payment Status:</strong> {selectedReg.payment?.status || 'PENDING'}</div>
-                <div><strong>Team Size:</strong> {selectedReg.players?.length || 5} Players</div>
-              </div>
-            </div>
 
-            {/* Players Table */}
-            <div>
-              <h4 className="font-arcade text-xs font-bold text-[#111827] mb-2">
-                SQUAD ROSTER & ID VERIFICATION
-              </h4>
-              <div className="border-2 border-[#111827] overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-[#111827] text-white font-arcade text-[10px]">
-                      <th className="p-2">#</th>
-                      <th className="p-2">Name</th>
-                      <th className="p-2">Student ID</th>
-                      <th className="p-2">Email</th>
-                      <th className="p-2">Branch/Year</th>
-                      <th className="p-2">ID Card</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#111827]">
-                    {selectedReg.players?.map((p: any, idx: number) => (
-                      <tr key={idx}>
-                        <td className="p-2 font-mono">0{idx + 1}</td>
-                        <td className="p-2 font-bold">{p.fullName}</td>
-                        <td className="p-2 font-mono">{p.studentId}</td>
-                        <td className="p-2 font-mono">{p.email}</td>
-                        <td className="p-2">{p.branch} - {p.year}</td>
-                        <td className="p-2">
-                          {p.idCardUrl ? (
-                            <a href={p.idCardUrl} target="_blank" rel="noreferrer" className="text-[#00AFC6] underline font-arcade text-[10px]">
-                              VIEW CARD
-                            </a>
-                          ) : (
-                            <span className="text-[#E5005A]">NONE</span>
+              {/* Payment evidence: UTR + screenshot */}
+              {selectedRegPayment && (
+                <div>
+                  <h4 className="font-arcade text-[10px] font-bold text-[#111827] mb-3">PAYMENT EVIDENCE</h4>
+                  <div className="border-2 border-[#111827] bg-white p-4 space-y-3">
+                    {/* UTR from entries or top-level */}
+                    {(() => {
+                      const entries: any[] = selectedRegPayment.entries || [];
+                      const topUTR = selectedRegPayment.transactionReference;
+                      const topImg = selectedRegPayment.evidence?.url;
+
+                      if (entries.length > 0) return entries.map((e: any, i: number) => (
+                        <div key={i} className="space-y-2">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 mb-1">UTR / Transaction Reference</p>
+                            <button
+                              onClick={() => copyToClipboard(e.transactionReference)}
+                              className="font-mono text-xs bg-[#111827]/5 border border-[#111827]/20 px-3 py-2 hover:bg-[#111827]/10 flex items-center gap-2 w-full text-left"
+                            >
+                              <span className="flex-1 truncate">{e.transactionReference || '—'}</span>
+                              <Copy className="w-3.5 h-3.5 opacity-40" />
+                            </button>
+                            {copiedUTR && <p className="text-[10px] text-[#16a34a]">✓ Copied!</p>}
+                          </div>
+                          <p className="text-xs"><strong>Amount:</strong> ₹{Number(e.amount).toLocaleString('en-IN')} {e.payerName ? `· ${e.payerName}` : ''}</p>
+                          {e.evidence?.url && (
+                            <div className="border border-[#111827]/20 overflow-hidden">
+                              <div className="flex items-center justify-between px-3 py-1.5 bg-[#111827]/5 border-b border-[#111827]/10">
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-[#111827]/50 flex items-center gap-1">
+                                  <ImageIcon className="w-3 h-3" /> UPI Screenshot
+                                </span>
+                                <button onClick={() => setScreenshotUrl(e.evidence.url)}
+                                  className="text-[10px] flex items-center gap-1 text-[#E5005A] font-bold hover:underline">
+                                  <ZoomIn className="w-3 h-3" /> View full
+                                </button>
+                              </div>
+                              <div className="p-2 cursor-pointer bg-[#f9fafb]"
+                                onClick={() => setScreenshotUrl(e.evidence.url)}>
+                                <img src={e.evidence.url} alt="UPI screenshot"
+                                  className="w-full max-h-48 object-contain hover:opacity-90 transition-opacity" />
+                              </div>
+                            </div>
                           )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                        </div>
+                      ));
 
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setSelectedReg(null)}
-                className="bg-[#111827] text-white font-arcade text-xs px-5 py-2 border-2 border-[#111827]"
-              >
-                CLOSE
-              </button>
+                      return (
+                        <>
+                          {topUTR && (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 mb-1">UTR / Transaction Reference</p>
+                              <button
+                                onClick={() => copyToClipboard(topUTR)}
+                                className="font-mono text-xs bg-[#111827]/5 border border-[#111827]/20 px-3 py-2 hover:bg-[#111827]/10 flex items-center gap-2 w-full text-left"
+                              >
+                                <span className="flex-1">{topUTR}</span>
+                                <Copy className="w-3.5 h-3.5 opacity-40" />
+                              </button>
+                              {copiedUTR && <p className="text-[10px] text-[#16a34a]">✓ Copied!</p>}
+                            </div>
+                          )}
+                          {topImg && (
+                            <div className="border border-[#111827]/20 overflow-hidden">
+                              <div className="flex items-center justify-between px-3 py-1.5 bg-[#111827]/5 border-b border-[#111827]/10">
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-[#111827]/50 flex items-center gap-1">
+                                  <ImageIcon className="w-3 h-3" /> UPI Screenshot
+                                </span>
+                                <button onClick={() => setScreenshotUrl(topImg)}
+                                  className="text-[10px] flex items-center gap-1 text-[#E5005A] font-bold hover:underline">
+                                  <ZoomIn className="w-3 h-3" /> View full
+                                </button>
+                              </div>
+                              <div className="p-2 cursor-pointer bg-[#f9fafb]"
+                                onClick={() => setScreenshotUrl(topImg)}>
+                                <img src={topImg} alt="UPI screenshot"
+                                  className="w-full max-h-48 object-contain hover:opacity-90 transition-opacity" />
+                              </div>
+                            </div>
+                          )}
+                          {!topUTR && !topImg && (
+                            <p className="text-xs text-[#111827]/40 italic">No payment evidence submitted yet.</p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* Team roster */}
+              <div>
+                <h4 className="font-arcade text-[10px] font-bold text-[#111827] mb-3">SQUAD ROSTER</h4>
+                {(() => {
+                  // Use roster from payment (enriched) or players from reg
+                  const members: any[] = selectedRegPayment?.roster || selectedReg.players || [];
+                  if (members.length === 0) {
+                    return <p className="text-xs text-[#111827]/40 italic">No roster data available.</p>;
+                  }
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {members.map((m: any, i: number) => (
+                        <div key={i}
+                          className={`flex items-start gap-3 p-3 border rounded-sm ${
+                            m.participantType === 'LEADER'
+                              ? 'border-[#E5005A]/40 bg-[#E5005A]/5'
+                              : 'border-[#111827]/15 bg-[#111827]/3'
+                          }`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${
+                            m.participantType === 'LEADER' ? 'bg-[#E5005A] text-white' : 'bg-[#111827]/10 text-[#111827]'
+                          }`}>
+                            {(m.fullName || m.name || '?').charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-sm">{m.fullName || m.name}</span>
+                              {m.participantType === 'LEADER' && (
+                                <span className="text-[9px] font-bold bg-[#E5005A] text-white px-1.5 py-0.5">LEADER</span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-[#111827]/50">{m.studentId} · {m.branch} · {m.year}</p>
+                            <p className="text-[11px] text-[#111827]/40 truncate">{m.college || m.collegeName}</p>
+                            <p className="text-[11px] text-[#111827]/50">{m.email}</p>
+                            {m.idCardUrl && (
+                              <a href={m.idCardUrl} target="_blank" rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-[#00AFC6] font-bold hover:underline mt-0.5">
+                                <Eye className="w-3 h-3" /> View ID Card
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setSelectedReg(null)}
+                  className="bg-[#111827] text-white font-arcade text-xs px-6 py-2.5 border-2 border-[#111827] hover:bg-[#E5005A] transition-colors"
+                >
+                  CLOSE
+                </button>
+              </div>
             </div>
           </div>
         </div>
