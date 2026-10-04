@@ -200,6 +200,28 @@ export async function getAdminPayments(req, res) {
       const reg = store.registrations.find(r => r.registrationId === p.registrationId);
       const expected = p.amountExpected || expectedAmountForTeamSize(reg?.teamSize);
       const paid = totalSubmitted(p);
+
+      // Resolve team roster from the Team record
+      const team = store.teams.find(t => t.registrationId === p.registrationId);
+      let roster = [];
+      if (team && Array.isArray(team.memberIds)) {
+        roster = team.memberIds.map(mid => {
+          const stu = store.students.find(s => String(s._id) === String(mid));
+          if (!stu) return null;
+          return {
+            fullName: stu.fullName,
+            studentId: stu.studentId,
+            email: stu.email,
+            mobile: stu.mobile,
+            branch: stu.branch,
+            year: stu.year,
+            college: stu.college || (stu.isSfit ? 'SFIT' : 'External'),
+            gender: stu.gender,
+            participantType: stu.participantType || 'MEMBER'
+          };
+        }).filter(Boolean);
+      }
+
       return {
         ...p,
         entries: Array.isArray(p.entries) ? p.entries : [],
@@ -210,7 +232,11 @@ export async function getAdminPayments(req, res) {
         teamSize: reg?.teamSize || 0,
         teamName: reg?.teamName || p.metadata?.teamName || 'Unknown Team',
         leaderName: reg?.leaderName || p.metadata?.customer?.name || 'Unknown',
-        contactEmail: reg?.contactEmail || p.metadata?.customer?.email || 'N/A'
+        contactEmail: reg?.contactEmail || p.metadata?.customer?.email || 'N/A',
+        contactMobile: reg?.contactMobile || '',
+        registrationStatus: reg?.status || 'UNKNOWN',
+        ticketNumber: reg?.ticketNumber || '',
+        roster
       };
     });
 

@@ -6,8 +6,10 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Check, X, Search, RefreshCw, Lock, LogOut, IndianRupee,
-  Clock, CheckCircle2, XCircle, Copy, Image as ImageIcon, AlertTriangle
+  X, Search, RefreshCw, Lock, LogOut, IndianRupee,
+  Clock, CheckCircle2, XCircle, Copy, Image as ImageIcon, AlertTriangle,
+  ChevronDown, ChevronUp, Users, Phone, Mail, Ticket,
+  Eye, ExternalLink, ShieldCheck, ShieldX, ZoomIn
 } from 'lucide-react';
 import {
   adminLogin, fetchAdminPayments, verifyAdminPayment, rejectAdminPayment
@@ -17,25 +19,498 @@ type Filter = 'AWAITING' | 'CONFIRMED' | 'REJECTED' | 'ALL';
 
 const AWAITING_STATES = ['PENDING_VERIFICATION', 'PENDING', 'PROCESSING', 'NOT_STARTED'];
 
+/* ────────────── helpers ────────────── */
+
+function StatusPill({ status }: { status: string }) {
+  const map: Record<string, [string, string, string]> = {
+    PAID:                 ['CONFIRMED',     '#16a34a', '#dcfce7'],
+    REJECTED:             ['REJECTED',      '#dc2626', '#fee2e2'],
+    PENDING_VERIFICATION: ['AWAITING CHECK','#d97706', '#fef3c7'],
+    PENDING:              ['PENDING',       '#6b7280', '#f3f4f6'],
+    PROCESSING:           ['PROCESSING',    '#6b7280', '#f3f4f6'],
+    NOT_STARTED:          ['NOT STARTED',   '#6b7280', '#f3f4f6'],
+  };
+  const [label, color, bg] = map[status] || [status, '#6b7280', '#f3f4f6'];
+  return (
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded-sm border"
+      style={{ color, borderColor: color, backgroundColor: bg }}>
+      {label}
+    </span>
+  );
+}
+
+function Stat({ icon: Icon, label, value, tone }: any) {
+  return (
+    <div className="border-2 border-[#111827] bg-white p-4 relative overflow-hidden">
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{ background: tone }}
+      />
+      <div className="flex items-center gap-2 mb-2 relative">
+        <div className="w-7 h-7 rounded-sm flex items-center justify-center" style={{ background: tone + '22' }}>
+          <Icon className="w-4 h-4" style={{ color: tone }} />
+        </div>
+        <span className="text-[10px] uppercase tracking-widest font-bold text-[#111827]/50">{label}</span>
+      </div>
+      <p className="font-pixel text-base relative" style={{ color: tone }}>{value}</p>
+    </div>
+  );
+}
+
+/* ────────────── screenshot modal ────────────── */
+function ScreenshotModal({ url, onClose }: { url: string; onClose: () => void }) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-w-xl w-full bg-white border-2 border-[#111827] shadow-[8px_8px_0_0_#111827]"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b-2 border-[#111827] bg-[#111827] text-white">
+          <span className="font-pixel text-xs">UPI PAYMENT SCREENSHOT</span>
+          <div className="flex items-center gap-2">
+            <a href={url} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 px-2 py-1 transition-colors">
+              <ExternalLink className="w-3 h-3" /> Open original
+            </a>
+            <button onClick={onClose}
+              className="w-6 h-6 flex items-center justify-center bg-white/10 hover:bg-[#E5005A] transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        <div className="p-2 max-h-[80vh] overflow-auto flex items-center justify-center bg-[#f3f4f6]">
+          <img
+            src={url}
+            alt="UPI payment screenshot"
+            className="max-w-full h-auto object-contain"
+            style={{ maxHeight: '72vh' }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────── team roster panel ────────────── */
+function RosterPanel({ payment }: { payment: any }) {
+  const roster: any[] = payment.roster || [];
+
+  if (roster.length === 0) {
+    return (
+      <p className="text-sm text-[#111827]/40 italic py-2">No roster data available.</p>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {roster.map((m: any, i: number) => (
+        <div key={i}
+          className={`flex items-start gap-3 p-3 border rounded-sm ${
+            m.participantType === 'LEADER'
+              ? 'border-[#E5005A]/40 bg-[#E5005A]/5'
+              : 'border-[#111827]/15 bg-[#111827]/3'
+          }`}
+        >
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${
+            m.participantType === 'LEADER' ? 'bg-[#E5005A] text-white' : 'bg-[#111827]/10 text-[#111827]'
+          }`}>
+            {m.fullName.charAt(0)}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-bold text-sm truncate">{m.fullName}</span>
+              {m.participantType === 'LEADER' && (
+                <span className="text-[9px] font-bold bg-[#E5005A] text-white px-1.5 py-0.5 rounded-sm">LEADER</span>
+              )}
+            </div>
+            <p className="text-xs text-[#111827]/50 mt-0.5">
+              {m.studentId} · {m.branch} · {m.year}
+            </p>
+            <p className="text-xs text-[#111827]/40 truncate">{m.college}</p>
+            <p className="text-xs text-[#111827]/50">{m.email}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ────────────── payment evidence section ────────────── */
+function PaymentEvidencePanel({ payment, onViewScreenshot }: { payment: any; onViewScreenshot: (url: string) => void }) {
+  const entries: any[] = payment.entries || [];
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const copy = (text: string) => {
+    navigator.clipboard?.writeText(text);
+    setCopied(text);
+    setTimeout(() => setCopied(null), 1800);
+  };
+
+  // Top-level evidence (non-entries based payment)
+  const topEvidence = payment.evidence?.url;
+  const topUTR = payment.transactionReference;
+
+  return (
+    <div className="space-y-3">
+      {/* Entries-based submissions */}
+      {entries.length > 0 && (
+        <div className="space-y-2">
+          {entries.map((e: any, i: number) => (
+            <div key={i} className="border-2 border-[#111827]/20 bg-white p-3 rounded-sm">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 mb-1">UTR / Transaction Reference</p>
+                  <button
+                    onClick={() => copy(e.transactionReference)}
+                    className="font-mono text-sm bg-[#111827]/5 border border-[#111827]/20 px-3 py-1.5 hover:bg-[#111827]/10 flex items-center gap-2 transition-colors w-full text-left"
+                  >
+                    <span className="flex-1 truncate">{e.transactionReference || '—'}</span>
+                    <Copy className="w-3.5 h-3.5 opacity-40 shrink-0" />
+                  </button>
+                  {copied === e.transactionReference && (
+                    <p className="text-[11px] text-[#16a34a] mt-0.5">✓ Copied to clipboard</p>
+                  )}
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 mb-1">Amount</p>
+                  <p className="font-bold text-sm tabular-nums">₹{Number(e.amount).toLocaleString('en-IN')}</p>
+                  {e.payerName && <p className="text-xs text-[#111827]/50 mt-0.5">{e.payerName}</p>}
+                </div>
+              </div>
+
+              {/* Screenshot */}
+              {e.evidence?.url && (
+                <div className="mt-3 border border-[#111827]/15 bg-[#f9fafb] rounded-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#111827]/10 bg-[#111827]/5">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#111827]/50 flex items-center gap-1">
+                      <ImageIcon className="w-3 h-3" /> UPI Screenshot
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => onViewScreenshot(e.evidence.url)}
+                        className="text-[10px] flex items-center gap-1 text-[#E5005A] font-bold hover:underline">
+                        <ZoomIn className="w-3 h-3" /> View full
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-2 cursor-pointer" onClick={() => onViewScreenshot(e.evidence.url)}>
+                    <img
+                      src={e.evidence.url}
+                      alt="UPI screenshot"
+                      className="w-full max-h-48 object-contain object-center hover:opacity-90 transition-opacity"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Fallback: top-level UTR/evidence (no entries array) */}
+      {entries.length === 0 && (topUTR || topEvidence) && (
+        <div className="border-2 border-[#111827]/20 bg-white p-3 rounded-sm">
+          {topUTR && (
+            <div className="mb-3">
+              <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 mb-1">UTR / Transaction Reference</p>
+              <button
+                onClick={() => copy(topUTR)}
+                className="font-mono text-sm bg-[#111827]/5 border border-[#111827]/20 px-3 py-1.5 hover:bg-[#111827]/10 flex items-center gap-2 transition-colors w-full text-left"
+              >
+                <span className="flex-1 truncate">{topUTR}</span>
+                <Copy className="w-3.5 h-3.5 opacity-40 shrink-0" />
+              </button>
+              {copied === topUTR && (
+                <p className="text-[11px] text-[#16a34a] mt-0.5">✓ Copied to clipboard</p>
+              )}
+            </div>
+          )}
+          {topEvidence && (
+            <div className="border border-[#111827]/15 bg-[#f9fafb] rounded-sm overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#111827]/10 bg-[#111827]/5">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-[#111827]/50 flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3" /> UPI Screenshot
+                </span>
+                <button onClick={() => onViewScreenshot(topEvidence)}
+                  className="text-[10px] flex items-center gap-1 text-[#E5005A] font-bold hover:underline">
+                  <ZoomIn className="w-3 h-3" /> View full
+                </button>
+              </div>
+              <div className="p-2 cursor-pointer" onClick={() => onViewScreenshot(topEvidence)}>
+                <img
+                  src={topEvidence}
+                  alt="UPI screenshot"
+                  className="w-full max-h-48 object-contain object-center hover:opacity-90 transition-opacity"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {entries.length === 0 && !topUTR && !topEvidence && (
+        <p className="text-sm text-[#111827]/40 italic">No payment submission yet.</p>
+      )}
+
+      {/* Amount summary */}
+      <div className="flex items-baseline gap-3 flex-wrap py-2 border-t-2 border-[#111827]/10">
+        <span className="font-bold tabular-nums">
+          ₹{Number(payment.amountPaid || 0).toLocaleString('en-IN')} paid
+        </span>
+        <span className="text-[#111827]/50 text-sm">
+          of ₹{Number(payment.amountExpected || 0).toLocaleString('en-IN')} expected
+          {payment.teamSize ? ` (${payment.teamSize} players)` : ''}
+        </span>
+        {!payment.fullyPaid && payment.status !== 'REJECTED' && (
+          <span className="text-[#dc2626] font-bold text-xs bg-[#fee2e2] px-2 py-0.5 rounded-sm">
+            SHORT ₹{Number(payment.amountRemaining || 0).toLocaleString('en-IN')}
+          </span>
+        )}
+        {payment.fullyPaid && payment.status !== 'PAID' && payment.status !== 'REJECTED' && (
+          <span className="text-[#16a34a] font-bold text-xs bg-[#dcfce7] px-2 py-0.5 rounded-sm">
+            FULLY COVERED ✓
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ────────────── payment card (AWAITING view) ────────────── */
+function AwaitingCard({
+  p,
+  busyId,
+  onConfirm,
+  onReject
+}: {
+  p: any;
+  busyId: string | null;
+  onConfirm: (p: any) => void;
+  onReject: (p: any) => void;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const [activeTab, setActiveTab] = useState<'payment' | 'roster'>('payment');
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+
+  const busy = busyId === p.paymentId;
+
+  return (
+    <>
+      {screenshotUrl && (
+        <ScreenshotModal url={screenshotUrl} onClose={() => setScreenshotUrl(null)} />
+      )}
+      <div className="border-2 border-[#111827] bg-white border-l-8 border-l-[#d97706] overflow-hidden">
+        {/* Header */}
+        <div className="p-4">
+          <div className="flex flex-wrap gap-4 items-start justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="font-pixel text-xs">{p.teamName || '(no team name)'}</span>
+                <StatusPill status={p.status} />
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-[#111827]/70 mt-1">
+                <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {p.leaderName}</span>
+                <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {p.contactEmail}</span>
+                {p.contactMobile && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {p.contactMobile}</span>}
+              </div>
+              <p className="text-xs text-[#111827]/40 mt-0.5">
+                {p.registrationId} · {p.method || 'UPI'} · ₹{Number(p.amount).toLocaleString('en-IN')}
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => onConfirm(p)}
+                disabled={busy}
+                title="Approve payment – mark as PAID and send ticket email"
+                className="flex items-center gap-2 font-bold text-sm px-4 py-2.5 bg-[#16a34a] text-white hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                {busy ? 'Saving…' : 'Approve'}
+              </button>
+              <button
+                onClick={() => onReject(p)}
+                disabled={busy}
+                title="Reject payment – notify team leader by email"
+                className="flex items-center gap-2 border-2 border-[#dc2626] text-[#dc2626] font-bold text-sm px-3 py-2.5 hover:bg-[#dc2626] hover:text-white disabled:opacity-50 transition-colors"
+              >
+                <ShieldX className="w-4 h-4" />
+                Reject
+              </button>
+              <button
+                onClick={() => setExpanded(v => !v)}
+                className="flex items-center gap-1 border-2 border-[#111827]/20 text-[#111827]/50 px-2 py-2.5 hover:bg-[#111827]/5 transition-colors"
+                title={expanded ? 'Collapse' : 'Expand details'}
+              >
+                {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Expandable detail area */}
+        {expanded && (
+          <div className="border-t-2 border-[#111827]/10">
+            {/* Tab bar */}
+            <div className="flex border-b-2 border-[#111827]/10 bg-[#f9fafb]">
+              <button
+                onClick={() => setActiveTab('payment')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-colors border-b-2 -mb-[2px] ${
+                  activeTab === 'payment'
+                    ? 'border-[#E5005A] text-[#E5005A] bg-white'
+                    : 'border-transparent text-[#111827]/50 hover:text-[#111827]'
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5" /> UPI Evidence & UTR
+              </button>
+              <button
+                onClick={() => setActiveTab('roster')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-colors border-b-2 -mb-[2px] ${
+                  activeTab === 'roster'
+                    ? 'border-[#E5005A] text-[#E5005A] bg-white'
+                    : 'border-transparent text-[#111827]/50 hover:text-[#111827]'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" /> Team Roster
+                {p.roster?.length > 0 && (
+                  <span className="ml-1 bg-[#111827]/10 text-[#111827] text-[9px] px-1.5 py-0.5 rounded-full font-bold">
+                    {p.roster.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            <div className="p-4">
+              {activeTab === 'payment' && (
+                <PaymentEvidencePanel payment={p} onViewScreenshot={setScreenshotUrl} />
+              )}
+              {activeTab === 'roster' && (
+                <RosterPanel payment={p} />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ────────────── compact card (CONFIRMED / REJECTED / ALL views) ────────────── */
+function CompactCard({ p, onViewScreenshot }: { p: any; onViewScreenshot: (url: string) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<'payment' | 'roster'>('payment');
+
+  const borderColor = p.status === 'PAID' ? '#16a34a' : p.status === 'REJECTED' ? '#dc2626' : '#d97706';
+  const statusBg   = p.status === 'PAID' ? 'bg-[#f0fdf4]' : p.status === 'REJECTED' ? 'bg-[#fff5f5] opacity-80' : 'bg-white';
+
+  return (
+    <div className={`border-2 border-[#111827] ${statusBg} overflow-hidden`}
+      style={{ borderLeftWidth: 6, borderLeftColor: borderColor }}>
+      <div className="p-4">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <span className="font-pixel text-xs">{p.teamName || '(no team name)'}</span>
+              <StatusPill status={p.status} />
+              {p.status === 'PAID' && p.ticketNumber && (
+                <span className="text-[10px] flex items-center gap-1 bg-[#16a34a]/10 text-[#16a34a] font-bold px-2 py-0.5 rounded-sm">
+                  <Ticket className="w-3 h-3" /> {p.ticketNumber}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-[#111827]/60">
+              <span>{p.leaderName}</span>
+              <span>{p.contactEmail}</span>
+              <span>{p.registrationId}</span>
+              <span className="font-bold">₹{Number(p.amountPaid || 0).toLocaleString('en-IN')}</span>
+            </div>
+            {p.status === 'PAID' && p.verifiedAt && (
+              <p className="text-[10px] text-[#16a34a] mt-0.5">
+                Approved {new Date(p.verifiedAt).toLocaleString('en-IN')}
+                {p.verifiedBy ? ` by ${p.verifiedBy}` : ''}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="flex items-center gap-1 border-2 border-[#111827]/20 text-[#111827]/50 px-2 py-2 hover:bg-[#111827]/5 transition-colors text-xs font-bold shrink-0"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            {expanded ? 'Hide' : 'View'} Details
+            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="border-t-2 border-[#111827]/10">
+          <div className="flex border-b-2 border-[#111827]/10 bg-[#f9fafb]">
+            <button
+              onClick={() => setActiveTab('payment')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold transition-colors border-b-2 -mb-[2px] ${
+                activeTab === 'payment'
+                  ? 'border-[#E5005A] text-[#E5005A] bg-white'
+                  : 'border-transparent text-[#111827]/50 hover:text-[#111827]'
+              }`}
+            >
+              <ImageIcon className="w-3.5 h-3.5" /> UPI Evidence & UTR
+            </button>
+            <button
+              onClick={() => setActiveTab('roster')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold transition-colors border-b-2 -mb-[2px] ${
+                activeTab === 'roster'
+                  ? 'border-[#E5005A] text-[#E5005A] bg-white'
+                  : 'border-transparent text-[#111827]/50 hover:text-[#111827]'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" /> Team Roster
+            </button>
+          </div>
+          <div className="p-4">
+            {activeTab === 'payment' && (
+              <PaymentEvidencePanel payment={p} onViewScreenshot={onViewScreenshot} />
+            )}
+            {activeTab === 'roster' && (
+              <RosterPanel payment={p} />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ────────────── main page ────────────── */
 export function PaymentDeskPage() {
   const [token, setToken] = useState<string | null>(
     () => localStorage.getItem('deception_admin_token')
   );
-  const [email, setEmail] = useState('admin@adg.org');
+  const [email, setEmail]       = useState('admin@adg.org');
   const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [loggingIn, setLoggingIn] = useState(false);
+  const [loginError, setLoginError]   = useState<string | null>(null);
+  const [loggingIn, setLoggingIn]     = useState(false);
 
-  const [payments, setPayments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [payments, setPayments]   = useState<any[]>([]);
+  const [loading, setLoading]     = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>('AWAITING');
-  const [search, setSearch] = useState('');
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [filter, setFilter]       = useState<Filter>('AWAITING');
+  const [search, setSearch]       = useState('');
+  const [busyId, setBusyId]       = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [copied, setCopied] = useState<string | null>(null);
-  const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [lastSynced, setLastSynced]     = useState<Date | null>(null);
+
+  // Global screenshot modal (for compact cards)
+  const [globalScreenshot, setGlobalScreenshot] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,7 +520,6 @@ export function PaymentDeskPage() {
       setPayments(Array.isArray(data) ? data : []);
       setLastSynced(new Date());
     } catch (err: any) {
-      // A stale token is the common case here; send them back to the login card.
       if (String(err.message).toLowerCase().includes('unauthor')) {
         localStorage.removeItem('deception_admin_token');
         setToken(null);
@@ -83,7 +557,7 @@ export function PaymentDeskPage() {
   const counts = useMemo(() => {
     const c = { awaiting: 0, confirmed: 0, rejected: 0, collected: 0 };
     for (const p of payments) {
-      if (p.status === 'PAID') { c.confirmed++; c.collected += Number(p.amountPaid ?? p.amount) || 0; }
+      if (p.status === 'PAID')       { c.confirmed++; c.collected += Number(p.amountPaid ?? p.amount) || 0; }
       else if (p.status === 'REJECTED') c.rejected++;
       else if (AWAITING_STATES.includes(p.status)) c.awaiting++;
     }
@@ -95,8 +569,8 @@ export function PaymentDeskPage() {
     return payments
       .filter(p => {
         if (filter === 'CONFIRMED') return p.status === 'PAID';
-        if (filter === 'REJECTED') return p.status === 'REJECTED';
-        if (filter === 'AWAITING') return AWAITING_STATES.includes(p.status);
+        if (filter === 'REJECTED')  return p.status === 'REJECTED';
+        if (filter === 'AWAITING')  return AWAITING_STATES.includes(p.status);
         return true;
       })
       .filter(p => !q || [p.teamName, p.leaderName, p.registrationId, p.transactionReference, p.contactEmail]
@@ -106,7 +580,6 @@ export function PaymentDeskPage() {
 
   const confirm = async (p: any) => {
     setBusyId(p.paymentId);
-    // Optimistic: the row flips immediately, and rolls back if the call fails.
     const before = payments;
     setPayments(cur => cur.map(x => x.paymentId === p.paymentId ? { ...x, status: 'PAID' } : x));
     try {
@@ -114,7 +587,7 @@ export function PaymentDeskPage() {
       await load();
     } catch (err: any) {
       setPayments(before);
-      setLoadError(`Could not confirm ${p.teamName}: ${err.message}`);
+      setLoadError(`Could not approve ${p.teamName}: ${err.message}`);
     } finally {
       setBusyId(null);
     }
@@ -124,7 +597,10 @@ export function PaymentDeskPage() {
     if (!rejecting) return;
     setBusyId(rejecting.paymentId);
     try {
-      await rejectAdminPayment(rejecting.paymentId, rejectReason.trim() || 'Payment could not be found in the account.');
+      await rejectAdminPayment(
+        rejecting.paymentId,
+        rejectReason.trim() || 'Payment could not be verified. Please contact the organizer.'
+      );
       setRejecting(null);
       setRejectReason('');
       await load();
@@ -135,13 +611,7 @@ export function PaymentDeskPage() {
     }
   };
 
-  const copy = (text: string) => {
-    navigator.clipboard?.writeText(text);
-    setCopied(text);
-    setTimeout(() => setCopied(null), 1500);
-  };
-
-  // ---------------------------------------------------------------- login
+  /* ── login screen ── */
   if (!token) {
     return (
       <div className="max-w-md mx-auto mt-12 mb-24">
@@ -171,7 +641,7 @@ export function PaymentDeskPage() {
               />
             </div>
             {loginError && (
-              <p className="text-sm text-[#C62828] flex items-center gap-2">
+              <p className="text-sm text-[#dc2626] flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0" /> {loginError}
               </p>
             )}
@@ -187,15 +657,60 @@ export function PaymentDeskPage() {
     );
   }
 
-  // ---------------------------------------------------------------- desk
+  /* ── main desk ── */
   return (
     <div className="mb-24">
+      {/* Global screenshot modal */}
+      {globalScreenshot && (
+        <ScreenshotModal url={globalScreenshot} onClose={() => setGlobalScreenshot(null)} />
+      )}
+
+      {/* Reject dialog */}
+      {rejecting && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50"
+          onClick={() => setRejecting(null)}>
+          <div className="bg-white border-2 border-[#111827] shadow-[8px_8px_0_0_#111827] p-6 max-w-md w-full"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 bg-[#dc2626] flex items-center justify-center">
+                <ShieldX className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-pixel text-xs">REJECT PAYMENT</h2>
+                <p className="text-xs text-[#111827]/60 mt-0.5">Team: <strong>{rejecting.teamName}</strong></p>
+              </div>
+            </div>
+            <p className="text-sm text-[#111827]/70 mb-1">
+              An email will be sent to <strong>{rejecting.contactEmail}</strong> with the rejection reason and your contact info.
+            </p>
+            <p className="text-xs text-[#111827]/40 mb-3">Leave blank to use the default message.</p>
+            <textarea
+              value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} autoFocus
+              placeholder={`e.g. No credit of ₹${Number(rejecting.amountExpected || 500).toLocaleString('en-IN')} found against this UTR. Please contact us at adg@sfit.ac.in`}
+              className="w-full border-2 border-[#111827] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5005A] resize-none"
+            />
+            <div className="flex gap-2 mt-4">
+              <button onClick={doReject} disabled={busyId === rejecting.paymentId}
+                className="flex-1 flex items-center justify-center gap-2 bg-[#dc2626] text-white font-bold text-sm py-3 hover:bg-[#b91c1c] disabled:opacity-50 transition-colors">
+                <ShieldX className="w-4 h-4" />
+                {busyId === rejecting.paymentId ? 'Sending…' : 'Reject & Notify Team'}
+              </button>
+              <button onClick={() => setRejecting(null)}
+                className="px-5 border-2 border-[#111827] font-bold text-sm hover:bg-[#111827] hover:text-white transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-pixel text-base sm:text-lg">PAYMENT DESK</h1>
           <p className="text-xs text-[#111827]/60 mt-1">
-            Tick a squad once its full amount is in your account. Members may pay separately.
-            {lastSynced && <> · synced {lastSynced.toLocaleTimeString()}</>}
+            Verify UPI screenshots &amp; UTRs, then approve or reject each team.
+            {lastSynced && <> · Synced at {lastSynced.toLocaleTimeString()}</>}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -204,29 +719,32 @@ export function PaymentDeskPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
           <button onClick={logout}
-            className="flex items-center gap-2 border-2 border-[#111827] px-3 py-2 text-xs font-bold hover:bg-[#C62828] hover:text-white hover:border-[#C62828] transition-colors">
+            className="flex items-center gap-2 border-2 border-[#111827] px-3 py-2 text-xs font-bold hover:bg-[#dc2626] hover:text-white hover:border-[#dc2626] transition-colors">
             <LogOut className="w-4 h-4" /> Sign out
           </button>
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Stat icon={Clock} label="Awaiting check" value={counts.awaiting} tone="#F9A825" />
-        <Stat icon={CheckCircle2} label="Confirmed" value={counts.confirmed} tone="#2E7D32" />
-        <Stat icon={XCircle} label="Rejected" value={counts.rejected} tone="#C62828" />
-        <Stat icon={IndianRupee} label="Collected" value={`₹${counts.collected.toLocaleString('en-IN')}`} tone="#111827" />
+        <Stat icon={Clock}        label="Awaiting check" value={counts.awaiting}  tone="#d97706" />
+        <Stat icon={CheckCircle2} label="Confirmed"       value={counts.confirmed} tone="#16a34a" />
+        <Stat icon={XCircle}      label="Rejected"        value={counts.rejected}  tone="#dc2626" />
+        <Stat icon={IndianRupee}  label="Collected"       value={`₹${counts.collected.toLocaleString('en-IN')}`} tone="#111827" />
       </div>
 
-      {/* Controls */}
+      {/* Filter + search */}
       <div className="flex flex-wrap gap-3 mb-4">
-        <div className="flex border-2 border-[#111827]">
+        <div className="flex border-2 border-[#111827] overflow-hidden">
           {(['AWAITING', 'CONFIRMED', 'REJECTED', 'ALL'] as Filter[]).map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`px-3 py-2 text-xs font-bold transition-colors ${
+              className={`px-4 py-2 text-xs font-bold transition-colors ${
                 filter === f ? 'bg-[#111827] text-white' : 'hover:bg-[#111827]/10'
               }`}>
-              {f === 'AWAITING' ? 'Awaiting' : f === 'CONFIRMED' ? 'Confirmed' : f === 'REJECTED' ? 'Rejected' : 'All'}
+              {f === 'AWAITING' ? `Awaiting (${counts.awaiting})`
+                : f === 'CONFIRMED' ? `Confirmed (${counts.confirmed})`
+                : f === 'REJECTED'  ? `Rejected (${counts.rejected})`
+                : 'All'}
             </button>
           ))}
         </div>
@@ -234,202 +752,66 @@ export function PaymentDeskPage() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#111827]/40" />
           <input
             value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search team, leader, UTR or registration ID"
+            placeholder="Search team, leader, email or UTR…"
             className="w-full border-2 border-[#111827] pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5005A]"
           />
         </div>
       </div>
 
       {loadError && (
-        <div className="border-2 border-[#C62828] bg-[#C62828]/5 text-[#C62828] px-4 py-3 mb-4 text-sm flex items-start gap-2">
+        <div className="border-2 border-[#dc2626] bg-[#dc2626]/5 text-[#dc2626] px-4 py-3 mb-4 text-sm flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{loadError}</span>
+          <button onClick={() => setLoadError(null)} className="ml-auto"><X className="w-4 h-4" /></button>
         </div>
       )}
 
-      {/* Rows */}
+      {/* AWAITING hint */}
+      {filter === 'AWAITING' && visible.length > 0 && (
+        <div className="border-2 border-[#d97706]/40 bg-[#fef3c7] px-4 py-3 mb-4 text-sm flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-[#d97706]" />
+          <span className="text-[#92400e]">
+            Review the UPI screenshot and UTR for each team before approving.
+            Clicking <strong>Approve</strong> marks payment as received and sends the team leader their entry ticket by email.
+            Clicking <strong>Reject</strong> notifies the leader to contact the organizer.
+          </span>
+        </div>
+      )}
+
+      {/* List */}
       {visible.length === 0 ? (
-        <div className="border-2 border-dashed border-[#111827]/30 p-12 text-center">
-          <p className="font-pixel text-xs text-[#111827]/50">
-            {loading ? 'LOADING…' : filter === 'AWAITING' ? 'NOTHING WAITING — ALL CLEAR' : 'NOTHING HERE'}
+        <div className="border-2 border-dashed border-[#111827]/30 p-16 text-center">
+          <p className="font-pixel text-xs text-[#111827]/40">
+            {loading ? 'LOADING…'
+              : filter === 'AWAITING'   ? 'NOTHING WAITING — ALL CLEAR ✓'
+              : filter === 'CONFIRMED'  ? 'NO CONFIRMED PAYMENTS YET'
+              : filter === 'REJECTED'   ? 'NO REJECTED PAYMENTS'
+              : 'NO PAYMENTS FOUND'}
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {visible.map(p => {
-            const awaiting = AWAITING_STATES.includes(p.status);
-            const busy = busyId === p.paymentId;
-            return (
-              <div key={p.paymentId}
-                className={`border-2 border-[#111827] bg-white p-4 ${
-                  p.status === 'PAID' ? 'border-l-8 border-l-[#2E7D32]'
-                  : p.status === 'REJECTED' ? 'border-l-8 border-l-[#C62828] opacity-70'
-                  : 'border-l-8 border-l-[#F9A825]'
-                }`}>
-                <div className="flex flex-wrap gap-4 items-start justify-between">
-                  <div className="min-w-[220px] flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-pixel text-xs">{p.teamName || '(no team name)'}</span>
-                      <StatusPill status={p.status} />
-                    </div>
-                    <p className="text-sm mt-1">
-                      {p.leaderName} · <span className="text-[#111827]/60">{p.contactEmail}</span>
-                    </p>
-                    <p className="text-xs text-[#111827]/60 mt-0.5">
-                      {p.registrationId} · {p.method || 'UPI'} · ₹{Number(p.amount).toLocaleString('en-IN')}
-                    </p>
-                  </div>
-
-                  <div className="min-w-[260px]">
-                    <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/50 mb-1">
-                      Payments submitted by team
-                    </p>
-                    {(p.entries || []).length === 0 ? (
-                      <p className="text-sm text-[#111827]/40 italic">nothing submitted yet</p>
-                    ) : (
-                      <div className="space-y-1">
-                        {(p.entries || []).map((e: any) => (
-                          <div key={e._id} className="flex items-center gap-2 text-sm">
-                            <button onClick={() => copy(e.transactionReference)} title="Click to copy"
-                              className="font-mono bg-[#111827]/5 border border-[#111827]/20 px-2 py-0.5 hover:bg-[#111827]/10 flex items-center gap-1.5">
-                              {e.transactionReference}
-                              <Copy className="w-3 h-3 opacity-40" />
-                            </button>
-                            <span className="font-bold tabular-nums">₹{Number(e.amount).toLocaleString('en-IN')}</span>
-                            <span className="text-[#111827]/50 text-xs truncate max-w-[110px]">{e.payerName}</span>
-                            {e.evidence?.url && (
-                              <a href={e.evidence.url} target="_blank" rel="noreferrer" title="View screenshot"
-                                className="text-[#E5005A]"><ImageIcon className="w-3.5 h-3.5" /></a>
-                            )}
-                            {copied === e.transactionReference && <span className="text-[10px] text-[#2E7D32]">copied</span>}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* A squad owes per head, so the target moves with team size. */}
-                    <div className="mt-2 pt-2 border-t border-[#111827]/20 text-sm flex items-baseline gap-2 flex-wrap">
-                      <span className="font-bold tabular-nums">
-                        ₹{Number(p.amountPaid || 0).toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-[#111827]/50">
-                        of ₹{Number(p.amountExpected || 0).toLocaleString('en-IN')}
-                        {p.teamSize ? ` (${p.teamSize} players)` : ''}
-                      </span>
-                      {!p.fullyPaid && p.status !== 'REJECTED' && (
-                        <span className="text-[#C62828] font-bold text-xs">
-                          short ₹{Number(p.amountRemaining || 0).toLocaleString('en-IN')}
-                        </span>
-                      )}
-                      {p.fullyPaid && p.status !== 'PAID' && p.status !== 'REJECTED' && (
-                        <span className="text-[#2E7D32] font-bold text-xs">fully covered</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {awaiting ? (
-                      <>
-                        <button onClick={() => confirm(p)} disabled={busy || !p.fullyPaid}
-                          title={p.fullyPaid
-                            ? 'Confirm this squad and issue their entry pass'
-                            : `Still short ₹${Number(p.amountRemaining || 0).toLocaleString('en-IN')} — the whole squad must be paid for before it goes in`}
-                          className={`flex items-center gap-2 font-bold text-sm px-4 py-3 disabled:cursor-not-allowed ${
-                            p.fullyPaid
-                              ? 'bg-[#2E7D32] text-white hover:brightness-110'
-                              : 'bg-[#111827]/15 text-[#111827]/50 border-2 border-[#111827]/20'
-                          }`}>
-                          <Check className="w-4 h-4" />
-                          {busy
-                            ? 'Saving…'
-                            : p.fullyPaid
-                              ? 'Money received'
-                              // Distinguish "nothing has arrived" from "some has": at a
-                              // glance during the event, "Part paid" on a squad at zero
-                              // reads as money having come in.
-                              : Number(p.amountPaid) > 0
-                                ? `Part paid · ₹${Number(p.amountPaid).toLocaleString('en-IN')}`
-                                : 'Not paid yet'}
-                        </button>
-                        <button onClick={() => { setRejecting(p); setRejectReason(''); }} disabled={busy}
-                          title="Payment not found"
-                          className="flex items-center gap-2 border-2 border-[#C62828] text-[#C62828] font-bold text-sm px-3 py-3 hover:bg-[#C62828] hover:text-white disabled:opacity-50">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </>
-                    ) : p.status === 'PAID' ? (
-                      <span className="flex items-center gap-2 text-[#2E7D32] font-bold text-sm">
-                        <CheckCircle2 className="w-5 h-5" /> Confirmed
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2 text-[#C62828] font-bold text-sm">
-                        <XCircle className="w-5 h-5" /> Rejected
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Reject dialog */}
-      {rejecting && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setRejecting(null)}>
-          <div className="bg-white border-2 border-[#111827] shadow-[6px_6px_0_0_#111827] p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <h2 className="font-pixel text-xs mb-2">REJECT PAYMENT</h2>
-            <p className="text-sm text-[#111827]/70 mb-4">
-              Team <strong>{rejecting.teamName}</strong> will be marked rejected and emailed the reason.
-            </p>
-            <textarea
-              value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} autoFocus
-              placeholder="e.g. No credit of ₹500 found against this UTR"
-              className="w-full border-2 border-[#111827] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5005A]"
-            />
-            <div className="flex gap-2 mt-4">
-              <button onClick={doReject} disabled={busyId === rejecting.paymentId}
-                className="flex-1 bg-[#C62828] text-white font-bold text-sm py-3 hover:brightness-110 disabled:opacity-50">
-                {busyId === rejecting.paymentId ? 'Saving…' : 'Reject payment'}
-              </button>
-              <button onClick={() => setRejecting(null)}
-                className="px-4 border-2 border-[#111827] font-bold text-sm hover:bg-[#111827] hover:text-white">
-                Cancel
-              </button>
-            </div>
-          </div>
+          {filter === 'AWAITING'
+            ? visible.map(p => (
+                <AwaitingCard
+                  key={p.paymentId}
+                  p={p}
+                  busyId={busyId}
+                  onConfirm={confirm}
+                  onReject={r => { setRejecting(r); setRejectReason(''); }}
+                />
+              ))
+            : visible.map(p => (
+                <CompactCard
+                  key={p.paymentId}
+                  p={p}
+                  onViewScreenshot={setGlobalScreenshot}
+                />
+              ))
+          }
         </div>
       )}
     </div>
-  );
-}
-
-function Stat({ icon: Icon, label, value, tone }: any) {
-  return (
-    <div className="border-2 border-[#111827] bg-white p-3">
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className="w-4 h-4" style={{ color: tone }} />
-        <span className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/60">{label}</span>
-      </div>
-      <p className="font-pixel text-sm" style={{ color: tone }}>{value}</p>
-    </div>
-  );
-}
-
-function StatusPill({ status }: { status: string }) {
-  const map: Record<string, [string, string]> = {
-    PAID: ['CONFIRMED', '#2E7D32'],
-    REJECTED: ['REJECTED', '#C62828'],
-    PENDING_VERIFICATION: ['AWAITING CHECK', '#F9A825'],
-    PENDING: ['NOT PAID YET', '#6B7280'],
-    PROCESSING: ['PROCESSING', '#6B7280'],
-    NOT_STARTED: ['NOT STARTED', '#6B7280']
-  };
-  const [label, color] = map[status] || [status, '#6B7280'];
-  return (
-    <span className="text-[10px] font-bold px-2 py-0.5 border" style={{ color, borderColor: color }}>
-      {label}
-    </span>
   );
 }
 
