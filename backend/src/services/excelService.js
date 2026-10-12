@@ -86,6 +86,7 @@ export class ExcelService {
       
       const memberIds = team?.memberIds || [];
       const leader = store.students.find(s => 
+        (team?.leaderId && String(s._id) === String(team.leaderId)) ||
         (s.email?.toLowerCase() === reg.contactEmail?.toLowerCase()) || 
         (memberIds.includes(s._id) && s.participantType === 'LEADER')
       );
@@ -201,7 +202,7 @@ export class ExcelService {
         const row = worksheet.addRow({
           registrationId: reg.registrationId,
           teamName: reg.teamName,
-          participantType: stu.participantType || 'MEMBER',
+          participantType: (team && String(team.leaderId) === String(stu._id)) ? 'LEADER' : 'MEMBER',
           studentId: stu.studentId,
           fullName: stu.fullName,
           collegeType: isSfit ? 'SFIT STUDENT' : 'NON-SFIT',

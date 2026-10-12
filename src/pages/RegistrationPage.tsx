@@ -382,9 +382,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
   // mobile and the QR is for someone paying from a second device.
   // The amount MUST be in the intent or UPI apps reject it, and it has to reflect the
   // share this person is actually sending - so build the link from what they typed.
+  const currentExpectedAmount = paySummary && !paySummary.fullyPaid
+    ? paySummary.remaining
+    : payCfg.perHeadAmount * (players.length || 0);
+
+  useEffect(() => {
+    if (currentExpectedAmount > 0) {
+      setPaidAmount(String(currentExpectedAmount));
+    }
+  }, [currentExpectedAmount]);
+
   const payNow = Number(paidAmount) > 0
     ? Number(paidAmount)
-    : payCfg.perHeadAmount * (players.length || 0);
+    : currentExpectedAmount;
 
   const upiUri = payOrder?.vpa
     ? `upi://pay?pa=${payOrder.vpa}` +
@@ -495,7 +505,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
       setErrorMsg('Please enter a valid 12-digit UPI UTR number or bank transaction ID.');
       return;
     }
-    const amt = Number(paidAmount);
+    const currentExpected = paySummary && !paySummary.fullyPaid
+      ? paySummary.remaining
+      : payCfg.perHeadAmount * (players.length || 0);
+    const amt = Number(paidAmount) > 0 ? Number(paidAmount) : currentExpected;
     if (!Number.isFinite(amt) || amt <= 0) {
       setErrorMsg('Please enter how much you paid, in rupees.');
       return;
@@ -1579,7 +1592,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
                     </label>
                     <input
                       type="number"
-                      value={payCfg.perHeadAmount * players.length}
+                      value={currentExpectedAmount}
                       readOnly
                       className="w-full px-4 py-3 bg-[#F7E8B5] border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] font-mono text-sm focus:outline-none"
                     />

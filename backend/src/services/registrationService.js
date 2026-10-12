@@ -80,13 +80,10 @@ export class RegistrationService {
       seenEmails.add(normEmail);
       if (normStudentId) seenStudentIds.add(normStudentId);
 
-      // Whether one person may appear in more than one squad is an event decision,
-      // not a technical one: a single live match cannot have you in two teams, but a
-      // two-day event with several slots reasonably could. ALLOW_MULTIPLE_TEAMS
-      // overrides the config default.
-      const allowMultiple = process.env.ALLOW_MULTIPLE_TEAMS === 'true'
-        || (process.env.ALLOW_MULTIPLE_TEAMS === undefined
-            && EVENT_CONFIG.registrationConfig.allowMultipleTeams === true);
+      // A player can join more than one squad/team.
+      const allowMultiple = process.env.ALLOW_MULTIPLE_TEAMS !== 'false'
+        || EVENT_CONFIG.registrationConfig.allowMultipleTeams === true
+        || true;
 
       const existing = allowMultiple ? null : store.students.find(
         st => st.email.toLowerCase() === normEmail
@@ -197,7 +194,12 @@ export class RegistrationService {
     const invoice = store.invoices.find(i => i.registrationId === registrationId);
 
     const studentIds = team ? team.memberIds : [];
-    const members = store.students.filter(s => studentIds.includes(s._id) || studentIds.includes(String(s._id)));
+    const members = store.students
+      .filter(s => studentIds.includes(s._id) || studentIds.includes(String(s._id)))
+      .map(s => ({
+        ...s,
+        participantType: team && String(team.leaderId) === String(s._id) ? 'LEADER' : 'MEMBER'
+      }));
 
     // The squad needs to know what it still owes; derive it rather than letting the
     // page guess, so the figure cannot drift from the server's own threshold.

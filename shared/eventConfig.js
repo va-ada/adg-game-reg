@@ -31,7 +31,7 @@ export const EVENT_CONFIG = {
   },
 
   registrationConfig: {
-    allowMultipleTeams: false,
+    allowMultipleTeams: true,
     registrationOpen: true,
     // DEFAULTS ONLY. The live values come from PER_HEAD_AMOUNT / CURRENCY in .env and
     // are substituted by the server before this config reaches the browser, so the fee

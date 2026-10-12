@@ -235,7 +235,8 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
       setErrorMsg('Please enter a valid 12-digit UPI UTR number.');
       return;
     }
-    const amt = Number(utrAmount);
+    const defaultAmt = Number(registration.payment?.amountRemaining) || 0;
+    const amt = Number(utrAmount) > 0 ? Number(utrAmount) : defaultAmt;
     if (!Number.isFinite(amt) || amt <= 0) {
       setErrorMsg('Please enter how much you paid, in rupees.');
       return;

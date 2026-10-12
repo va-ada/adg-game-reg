@@ -175,7 +175,12 @@ export async function getAdminTeams(req, res) {
     const enrichedTeams = store.teams.map(t => {
       const reg = store.registrations.find(r => r.registrationId === t.registrationId);
       const pay = store.payments.find(p => p.registrationId === t.registrationId);
-      const members = store.students.filter(s => t.memberIds.includes(s._id) || t.memberIds.includes(String(s._id)));
+      const members = store.students
+        .filter(s => t.memberIds.includes(s._id) || t.memberIds.includes(String(s._id)))
+        .map(s => ({
+          ...s,
+          participantType: String(t.leaderId) === String(s._id) ? 'LEADER' : 'MEMBER'
+        }));
       return {
         ...t,
         registrationStatus: reg?.status || 'UNKNOWN',
@@ -217,7 +222,7 @@ export async function getAdminPayments(req, res) {
             year: stu.year,
             college: stu.college || (stu.isSfit ? 'SFIT' : 'External'),
             gender: stu.gender,
-            participantType: stu.participantType || 'MEMBER'
+            participantType: String(team.leaderId) === String(stu._id) ? 'LEADER' : 'MEMBER'
           };
         }).filter(Boolean);
       }

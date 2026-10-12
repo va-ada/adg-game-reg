@@ -17,7 +17,7 @@ const GameSchema = new mongoose.Schema({
     requireCollegeId: { type: Boolean, default: true }
   },
   registrationConfig: {
-    allowMultipleTeams: { type: Boolean, default: false },
+    allowMultipleTeams: { type: Boolean, default: true },
     registrationOpen: { type: Boolean, default: true },
     amount: { type: Number, default: 500 },
     currency: { type: String, default: 'INR' }
