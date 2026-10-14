@@ -46,7 +46,6 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
   const [payOrder, setPayOrder] = useState<any>(null);
   const [qrImage, setQrImage] = useState('');
   const [copiedVpa, setCopiedVpa] = useState(false);
-  const [showQr, setShowQr] = useState(false);
   const [utrProofName, setUtrProofName] = useState('');
   const [utrProofUploading, setUtrProofUploading] = useState(false);
   const [payCfg, setPayCfg] = useState<any>({ mockEnabled: false, upiVpa: '' });
@@ -178,22 +177,11 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
   useEffect(() => {
     if (!upiUri) { setQrImage(''); return; }
     let alive = true;
-    QRCode.toDataURL(upiUri, { width: 300, margin: 1 })
+    QRCode.toDataURL(upiUri, { width: 600, margin: 2 })
       .then(u => { if (alive) setQrImage(u); })
       .catch(() => { if (alive) setQrImage(''); });
     return () => { alive = false; };
   }, [upiUri]);
-
-  // The plain upi:// intent is the one verified against a real payment, so it leads.
-  // The app-specific schemes are a convenience: tez:// in particular is being retired
-  // in favour of the standard intent, so they must never be the only route offered.
-  const upiApps = upiUri
-    ? [
-        { label: 'Google Pay', href: upiUri.replace('upi://', 'tez://upi/') },
-        { label: 'PhonePe', href: upiUri.replace('upi://', 'phonepe://') },
-        { label: 'Paytm', href: upiUri.replace('upi://', 'paytmmp://') }
-      ]
-    : [];
 
   // Payment screenshot, routed through the shared upload endpoint so it reaches
   // Drive when configured and stays inline otherwise.
@@ -863,51 +851,38 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
                 <h4 className="font-arcade text-xs font-bold text-[#111827]">
                   Pay by UPI, then enter your reference
                 </h4>
-                {/* UPI apps often block a link that pays a PERSONAL UPI ID with the amount
-                    pre-filled, and nothing is debited. Typing the UPI ID inside the app is
-                    an ordinary transfer that always goes through, so it leads; the link is
-                    offered second as a shortcut. */}
-                <ol className="space-y-2 text-[11px] text-[#111827]">
-                  <li>
-                    <strong>1.</strong> Open GPay / PhonePe / Paytm / any UPI app and choose{' '}
-                    <strong>Pay UPI ID</strong> (or "Pay to UPI ID / number").
-                  </li>
-                  <li>
-                    <strong>2.</strong> Paste this UPI ID:
-                    <button type="button" onClick={copyVpa}
-                      className="mt-1 w-full font-mono text-[12px] bg-[#F7E8B5] px-2 py-2 border-2 border-[#111827] break-all text-left">
-                      {payOrder?.vpa || payCfg.upiVpa || 'loading…'}
-                      <span className="block mt-0.5 text-[10px] font-bold text-[#2E7D32]">{copiedVpa ? 'copied' : 'tap to copy'}</span>
-                    </button>
-                  </li>
-                  <li>
-                    <strong>3.</strong> Enter <strong>₹{payNow || 0}</strong> and pay.
-                  </li>
-                  <li>
-                    <strong>4.</strong> Fill in the UTR below.
-                  </li>
-                </ol>
-
-                {upiUri && (
-                  <a href={upiUri}
-                    className="block text-center font-arcade text-xs py-3 border-2 border-[#111827] bg-[#2E7D32] text-white shadow-[3px_3px_0_0_#111827]">
-                    OR TRY QUICK PAY ₹{payNow || 0}
-                  </a>
-                )}
-                <p className="text-[10px] text-[#111827]/60 leading-snug">
-                  If Quick Pay fails or says "declined", no money is taken - use steps 1-4 instead.
-                </p>
-
-                <button type="button" onClick={() => setShowQr(v => !v)}
-                  className="w-full text-[11px] text-[#111827]/60 underline py-1">
-                  {showQr ? 'hide QR' : 'paying from another phone? show QR'}
-                </button>
-
-                {showQr && qrImage && (
+                {/* GPay and friends block a pay LINK opened from a website when it pays a
+                    personal UPI ID ("exceeded bank limit", nothing debited). Scanning the
+                    very same QR inside the app works, including scanning a saved image
+                    from the gallery - so on a phone that is the route, and typing the
+                    UPI ID is the fallback. */}
+                {qrImage && (
                   <div className="flex justify-center">
-                    <img src={qrImage} alt="UPI QR" className="w-40 h-40 border-2 border-[#111827] bg-white p-1" />
+                    <img src={qrImage} alt={`UPI QR to pay ₹${payNow || 0}`} className="w-44 h-44 border-2 border-[#111827] bg-white p-1" />
                   </div>
                 )}
+                {qrImage && (
+                  <a href={qrImage} download={`DECEPTION-${registration?.registrationId || 'pay'}-QR.png`}
+                    className="block text-center font-arcade text-xs py-3.5 border-2 border-[#111827] bg-[#2E7D32] text-white shadow-[3px_3px_0_0_#111827]">
+                    SAVE QR TO PHONE
+                  </a>
+                )}
+                <ol className="space-y-1.5 text-[11px] text-[#111827]">
+                  <li><strong>1.</strong> Tap <strong>Save QR</strong> (or long-press the QR → Download / Save image).</li>
+                  <li><strong>2.</strong> Open GPay / PhonePe / Paytm → <strong>Scan QR</strong> → tap the <strong>gallery / photo</strong> icon → pick the saved QR.</li>
+                  <li><strong>3.</strong> Pay <strong>₹{payNow || 0}</strong>, then fill in the UTR below.</li>
+                </ol>
+                <p className="text-[10px] text-[#111827]/60 leading-snug">
+                  Paying from another phone? Just scan the QR above.
+                </p>
+                <div className="pt-1">
+                  <p className="text-[10px] text-[#111827]/60">Can't scan? Choose <strong>Pay UPI ID</strong> in your app, paste this and type ₹{payNow || 0}:</p>
+                  <button type="button" onClick={copyVpa}
+                    className="mt-1 w-full font-mono text-[12px] bg-[#F7E8B5] px-2 py-2 border-2 border-[#111827] break-all text-left">
+                    {payOrder?.vpa || payCfg.upiVpa || 'loading…'}
+                    <span className="block mt-0.5 text-[10px] font-bold text-[#2E7D32]">{copiedVpa ? 'copied' : 'tap to copy'}</span>
+                  </button>
+                </div>
 
                 <div className="border-t-2 border-[#111827]/15 pt-3">
                   <p className="text-[11px] font-bold mb-2">After paying, tell us:</p>

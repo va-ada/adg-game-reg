@@ -406,21 +406,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
   useEffect(() => {
     if (!upiUri) { setQrImage(''); return; }
     let alive = true;
-    QRCode.toDataURL(upiUri, { width: 320, margin: 1 })
+    QRCode.toDataURL(upiUri, { width: 600, margin: 2 })
       .then(u => { if (alive) setQrImage(u); })
       .catch(() => { if (alive) setQrImage(''); });
     return () => { alive = false; };
   }, [upiUri]);
 
-  // The plain upi:// intent is the one verified against a real payment; the branded
-  // schemes are a convenience and must never be the only route offered.
-  const upiApps = upiUri
-    ? [
-        { label: 'Google Pay', href: upiUri.replace('upi://', 'tez://upi/') },
-        { label: 'PhonePe', href: upiUri.replace('upi://', 'phonepe://') },
-        { label: 'Paytm', href: upiUri.replace('upi://', 'paytmmp://') }
-      ]
-    : [];
 
   // Scanning is the primary route; typing is always available underneath. A QR we
   // cannot read must say so rather than silently doing nothing.
@@ -1510,51 +1501,35 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
                     enter that figure below.
                   </p>
 
-                  {/* On a phone the QR is useless (you cannot scan your own screen),
-                      so tapping straight into a UPI app is the primary route. */}
-                  {/* UPI apps often block a link that pays a PERSONAL UPI ID with the
-                      amount pre-filled, and nothing is debited. Paying the UPI ID by hand
-                      inside the app always goes through, so it leads. */}
+                  {/* GPay and friends block a pay LINK opened from a website when it pays a
+                      personal UPI ID ("exceeded bank limit", nothing debited). Scanning the
+                      same QR inside the app works, including from a saved image, so that
+                      is the route; typing the UPI ID is the fallback. */}
+                  {qrImage && (
+                    <a href={qrImage} download={`DECEPTION-${createdRegistration.registrationId}-QR.png`}
+                      className="block text-center font-arcade text-xs py-3.5 border-2 border-[#111827] bg-[#2E7D32] text-white shadow-[3px_3px_0_0_#111827] hover:brightness-110">
+                      SAVE QR TO PHONE
+                    </a>
+                  )}
                   <div className="p-2 border-2 border-[#111827] bg-[#F7E8B5] space-y-1.5 text-[11px] text-left">
-                    <p className="font-bold">Pay in any UPI app (always works):</p>
-                    <p>1. Open GPay / PhonePe / Paytm → <strong>Pay UPI ID</strong></p>
-                    <p>2. Paste the UPI ID:</p>
+                    <p>1. Tap <strong>Save QR</strong> (or long-press the QR → Download / Save image).</p>
+                    <p>2. Open GPay / PhonePe / Paytm → <strong>Scan QR</strong> → tap the <strong>gallery / photo</strong> icon → pick the saved QR.</p>
+                    <p>3. Pay <strong>{money(payNow)}</strong>, then fill in the UTR below.</p>
+                    <p className="text-[#111827]/60">Paying from another phone? Just scan the QR.</p>
+                  </div>
+                  <div className="pt-1">
+                    <p className="text-[10px] text-[#111827]/60">
+                      Can't scan? Choose <strong>Pay UPI ID</strong> in your app, paste this and type {money(payNow)}:
+                    </p>
                     <button
                       type="button"
                       onClick={copyVpa}
-                      className="w-full font-mono text-xs bg-[#F7E8B5] px-2 py-2 border-2 border-[#111827] break-all text-left hover:bg-[#F4C430]"
+                      className="mt-1 w-full font-mono text-xs bg-[#F7E8B5] px-2 py-2 border-2 border-[#111827] break-all text-left hover:bg-[#F4C430]"
                     >
                       {payOrder?.vpa || 'loading…'}
                       <span className="block mt-0.5 text-[10px] text-[#2E7D32] font-bold">{copiedVpa ? 'copied' : 'tap to copy'}</span>
                     </button>
-                    <p>3. Enter <strong>{money(payNow)}</strong>, pay, then fill in the UTR below.</p>
                   </div>
-                  {upiUri && (
-                    <a href={upiUri}
-                      className="block text-center font-arcade text-xs py-3 border-2 border-[#111827] bg-[#2E7D32] text-white shadow-[3px_3px_0_0_#111827] hover:brightness-110">
-                      OR TRY QUICK PAY {money(payNow)}
-                    </a>
-                  )}
-                  {upiApps.length > 0 && (
-                    <>
-                      <p className="text-[10px] text-center text-[#111827]/50 uppercase tracking-wide pt-1">
-                        or open a specific app
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {upiApps.map(app => (
-                          <a key={app.label} href={app.href}
-                            className="text-center font-bold text-[10px] py-2 border-2 border-[#111827] bg-[#F7E8B5] hover:bg-[#E5005A] hover:text-white transition-colors">
-                            {app.label}
-                          </a>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                <p className="text-[10px] text-[#111827]/60 leading-snug">
-                  If Quick Pay fails or says "declined", no money is taken - pay the UPI ID
-                  by hand as above. The QR is for paying from a second phone.
-                </p>
 
                   <p className="text-[#111827]/80 text-[11px]">
                     Reference / note: <strong className="font-mono break-all">{createdRegistration.registrationId}</strong>
