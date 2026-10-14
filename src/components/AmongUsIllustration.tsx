@@ -14,39 +14,47 @@ export const AmongUsIllustration: React.FC<IllustrationProps> = ({ onRegisterCli
       {/* 1. HERO BANNER TITLE & BADGES (DIRECTLY FROM POSTER) */}
       {/* ---------------------------------------------------- */}
       <div className="text-center space-y-3 mb-6">
-        {/* Organizer Header */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#FFFDF0] border-2 border-[#111827] shadow-[2px_2px_0_0_#111827]">
-          <span className="w-2 h-2 rounded-full bg-[#E5005A] animate-ping"></span>
-          <span className="font-arcade text-xs sm:text-sm text-[#111827] font-bold tracking-wider">
+        {/* Organizer Header matching poster: ADG X MOSAIC */}
+        <div className="flex flex-col items-center justify-center gap-1.5">
+          <div className="font-arcade text-lg sm:text-2xl tracking-[0.25em] text-[#fdfbf7] flex items-center justify-center gap-2">
+            <span>A D G</span>
+            <span className="text-[#ff2a4b] font-bold text-xl sm:text-2xl drop-shadow-[0_0_8px_rgba(255,42,75,0.7)]">✕</span>
+            <span>M O S A I C</span>
+          </div>
+          <div className="text-[10px] sm:text-xs font-arcade tracking-[0.2em] text-[#94a3b8] uppercase">
             AI DEVELOPERS GROUP PRESENTS
-          </span>
+          </div>
         </div>
 
-        {/* Big Stylized Retro Title D E C E P T I O N */}
+        {/* Big Stylized Poster Title D E C E P T I O N */}
         <div className="relative py-2">
-          {/* Floating poster ribbons on sides */}
-          <div className="hidden lg:block absolute left-2 top-0 transform -rotate-12 bg-[#00AFC6] text-white font-arcade text-xs px-3 py-2 border-2 border-[#111827] shadow-[3px_3px_0_0_#111827] max-w-[130px] text-center">
-            ONE OF YOU ISN'T WHO THEY SEEM..
+          {/* Poster Tagline Above Title */}
+          <div className="text-xs sm:text-sm md:text-base font-arcade tracking-[0.18em] text-[#cbd5e1] mb-2 uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            ONE OF YOU ISN'T WHO THEY SEEM.
           </div>
 
-          <div className="hidden lg:block absolute right-4 top-2 transform rotate-6">
-            <div className="w-10 h-10 text-[#F4C430] filter drop-shadow-[2px_2px_0px_#111827]">
-              👑
-            </div>
-          </div>
-
-          <h1 className="font-pixel text-2xl xs:text-3xl sm:text-6xl md:text-7xl lg:text-8xl tracking-wider sm:tracking-widest text-[#E5005A] drop-shadow-[3px_3px_0px_#111827] sm:drop-shadow-[4px_4px_0px_#111827] uppercase">
+          <h1 className="font-pixel text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-8xl tracking-wider sm:tracking-widest text-[#fdfbf7] drop-shadow-[3px_3px_0px_#ff2a4b] sm:drop-shadow-[5px_5px_0px_#ff2a4b] uppercase drop-shadow-[0_0_25px_rgba(255,42,75,0.35)]">
             DECEPTION
           </h1>
+
+          {/* Subtitle directly from poster: TRUST NO ONE. */}
+          <div className="mt-3">
+            <span className="font-arcade text-sm sm:text-lg tracking-[0.3em] font-bold text-[#ff2a4b] drop-shadow-[0_0_10px_rgba(255,42,75,0.6)] animate-pulse">
+              TRUST NO ONE.
+            </span>
+          </div>
         </div>
 
-        {/* Date & Collaboration Pills */}
+        {/* Date, Room & Action Pills */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 pt-1">
-          <span className="bg-[#00AFC6] text-white font-pixel text-[10px] sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 border-2 sm:border-3 border-[#111827] shadow-[2px_2px_0_0_#111827] sm:shadow-[3px_3px_0_0_#111827]">
-            {EVENT_CONFIG.eventDateDisplay}
+          <span className="bg-[#131b2e] text-[#fdfbf7] font-pixel text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 border-2 border-[#ff2a4b] shadow-[2px_2px_0_0_#ff2a4b]">
+            📅 {EVENT_CONFIG.eventDateDisplay}
           </span>
-          <span className="bg-[#FFFDF0] text-[#111827] font-arcade text-xs sm:text-sm px-2.5 sm:px-3 py-1 sm:py-1.5 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827]">
-            <span className="text-[#4CAF50] font-bold">ADG</span> x <span className="text-[#E5005A] font-bold">Mosaic</span>
+          <span className="bg-[#131b2e] text-[#fdfbf7] font-arcade text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 border-2 border-[#22314d] shadow-[2px_2px_0_0_#04060a]">
+            📍 {EVENT_CONFIG.venue}
+          </span>
+          <span className="bg-[#ff2a4b] text-white font-arcade text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 border-2 border-[#ff2a4b] shadow-[2px_2px_0_0_#04060a] font-bold">
+            👁️ COMPLETE TASKS. VOTE.
           </span>
         </div>
       </div>
@@ -195,54 +203,54 @@ export const AmongUsIllustration: React.FC<IllustrationProps> = ({ onRegisterCli
       {/* 3. THE 4 PILLARS (EXACT CARDS FROM THE POSTER) */}
       {/* ---------------------------------------------------- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto my-8">
-        {/* Card 1: Tasks (Pink) */}
+        {/* Card 1: Tasks (Red) */}
         <div className="bg-[#FFFDF0] border-3 border-[#111827] shadow-[4px_4px_0_0_#111827] p-5 text-center flex flex-col items-center hover:translate-y-[-2px] transition-transform">
-          <div className="w-16 h-16 bg-[#E5005A] border-3 border-[#111827] shadow-[3px_3px_0_0_#111827] flex items-center justify-center text-white mb-3">
+          <div className="w-16 h-16 bg-[#ff2a4b] border-2 border-[#ff2a4b] shadow-[0_0_12px_rgba(255,42,75,0.4)] flex items-center justify-center text-white mb-3">
             <Search className="w-8 h-8 stroke-[2.5]" />
           </div>
-          <h4 className="font-pixel text-xs sm:text-sm text-[#E5005A] tracking-wider mb-2">
-            COMPLETE YOUR TASKS
+          <h4 className="font-pixel text-xs sm:text-sm text-[#ff2a4b] tracking-wider mb-2">
+            COMPLETE TASKS
           </h4>
-          <p className="text-xs text-[#111827] font-body">
+          <p className="text-xs text-[#94a3b8] font-body">
             Execute technical and physical lab tasks across Room 028 before the timer runs out.
           </p>
         </div>
 
-        {/* Card 2: Observation (Yellow) */}
+        {/* Card 2: Observation (Cyan) */}
         <div className="bg-[#FFFDF0] border-3 border-[#111827] shadow-[4px_4px_0_0_#111827] p-5 text-center flex flex-col items-center hover:translate-y-[-2px] transition-transform">
-          <div className="w-16 h-16 bg-[#F4C430] border-3 border-[#111827] shadow-[3px_3px_0_0_#111827] flex items-center justify-center text-[#111827] mb-3">
+          <div className="w-16 h-16 bg-[#00AFC6] border-2 border-[#00AFC6] shadow-[0_0_12px_rgba(0,175,198,0.4)] flex items-center justify-center text-white mb-3">
             <Eye className="w-8 h-8 stroke-[2.5]" />
           </div>
-          <h4 className="font-pixel text-xs sm:text-sm text-[#111827] tracking-wider mb-2">
-            WATCH THE OTHERS
+          <h4 className="font-pixel text-xs sm:text-sm text-[#00AFC6] tracking-wider mb-2">
+            WATCH CLOSELY
           </h4>
-          <p className="text-xs text-[#111827] font-body">
+          <p className="text-xs text-[#94a3b8] font-body">
             Track player movements, note who fakes station work, and spot suspicious routes.
           </p>
         </div>
 
-        {/* Card 3: Suspicious Player (Cyan) */}
+        {/* Card 3: Suspicious Player / Imposter (Amber) */}
         <div className="bg-[#FFFDF0] border-3 border-[#111827] shadow-[4px_4px_0_0_#111827] p-5 text-center flex flex-col items-center hover:translate-y-[-2px] transition-transform">
-          <div className="w-16 h-16 bg-[#00AFC6] border-3 border-[#111827] shadow-[3px_3px_0_0_#111827] flex items-center justify-center text-white mb-3">
+          <div className="w-16 h-16 bg-[#d97706] border-2 border-[#d97706] shadow-[0_0_12px_rgba(217,119,6,0.4)] flex items-center justify-center text-white mb-3">
             <UserX className="w-8 h-8 stroke-[2.5]" />
           </div>
-          <h4 className="font-pixel text-xs sm:text-sm text-[#00AFC6] tracking-wider mb-2">
-            FIND OUT THE SUSPICIOUS PLAYER
+          <h4 className="font-pixel text-xs sm:text-sm text-[#fbbf24] tracking-wider mb-2">
+            FIND THE IMPOSTER
           </h4>
-          <p className="text-xs text-[#111827] font-body">
-            Piece together clues, cross-check alibis, and unmask the imposter sabotaging your team.
+          <p className="text-xs text-[#94a3b8] font-body">
+            Piece together clues, cross-check alibis, and unmask the saboteur sabotaging your team.
           </p>
         </div>
 
         {/* Card 4: Vote (Green) */}
         <div className="bg-[#FFFDF0] border-3 border-[#111827] shadow-[4px_4px_0_0_#111827] p-5 text-center flex flex-col items-center hover:translate-y-[-2px] transition-transform">
-          <div className="w-16 h-16 bg-[#4CAF50] border-3 border-[#111827] shadow-[3px_3px_0_0_#111827] flex items-center justify-center text-white mb-3">
+          <div className="w-16 h-16 bg-[#10b981] border-2 border-[#10b981] shadow-[0_0_12px_rgba(16,185,129,0.4)] flex items-center justify-center text-white mb-3">
             <Vote className="w-8 h-8 stroke-[2.5]" />
           </div>
-          <h4 className="font-pixel text-xs sm:text-sm text-[#4CAF50] tracking-wider mb-2">
-            VOTE BEFORE THE IMPOSTER WINS
+          <h4 className="font-pixel text-xs sm:text-sm text-[#10b981] tracking-wider mb-2">
+            VOTE
           </h4>
-          <p className="text-xs text-[#111827] font-body">
+          <p className="text-xs text-[#94a3b8] font-body">
             Convene emergency meetings at the main desk and eject the saboteur before time expires.
           </p>
         </div>
@@ -252,11 +260,11 @@ export const AmongUsIllustration: React.FC<IllustrationProps> = ({ onRegisterCli
       {/* 4. POSTER MOTIFS: TRUST NO ONE & VENUE 028 */}
       {/* ---------------------------------------------------- */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 my-6">
-        <div className="w-full sm:w-auto text-center bg-[#00AFC6] text-white font-pixel text-xs sm:text-base px-4 sm:px-6 py-2 sm:py-2.5 border-3 border-[#111827] shadow-[3px_3px_0_0_#111827] sm:shadow-[4px_4px_0_0_#111827] tracking-normal sm:tracking-widest uppercase">
-          {EVENT_CONFIG.warningQuote}
+        <div className="w-full sm:w-auto text-center bg-[#ff2a4b]/15 text-[#ff2a4b] font-pixel text-xs sm:text-base px-4 sm:px-6 py-2 sm:py-2.5 border-2 border-[#ff2a4b] shadow-[0_0_15px_rgba(255,42,75,0.25)] tracking-normal sm:tracking-widest uppercase">
+          🚨 TRUST NO ONE.
         </div>
-        <div className="w-full sm:w-auto text-center bg-[#FFFDF0] text-[#111827] font-pixel text-[11px] sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 border-3 border-[#111827] shadow-[3px_3px_0_0_#111827] sm:shadow-[4px_4px_0_0_#111827] tracking-normal sm:tracking-wider font-bold">
-          VENUE: {EVENT_CONFIG.venue}
+        <div className="w-full sm:w-auto text-center bg-[#131b2e] text-[#fdfbf7] font-pixel text-[11px] sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 border-2 border-[#22314d] shadow-[3px_3px_0_0_#04060a] tracking-normal sm:tracking-wider font-bold">
+          📍 VENUE: {EVENT_CONFIG.venue}
         </div>
       </div>
 
@@ -265,7 +273,7 @@ export const AmongUsIllustration: React.FC<IllustrationProps> = ({ onRegisterCli
         {onRegisterClick && (
           <button
             onClick={onRegisterClick}
-            className="w-full sm:w-auto bg-[#E5005A] text-white font-arcade text-xs sm:text-base px-6 sm:px-8 py-3.5 border-3 border-[#111827] shadow-[4px_4px_0_0_#111827] sm:shadow-[5px_5px_0_0_#111827] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[7px_7px_0_0_#111827] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_0_#111827] flex items-center justify-center gap-2"
+            className="w-full sm:w-auto bg-[#ff2a4b] hover:bg-[#e50914] text-white font-arcade text-xs sm:text-base px-6 sm:px-8 py-3.5 border-2 border-[#ff2a4b] shadow-[0_0_20px_rgba(255,42,75,0.45)] hover:translate-x-[-2px] hover:translate-y-[-2px] active:translate-x-[2px] active:translate-y-[2px] flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
             <span>REGISTER YOUR SQUAD (5–6 PLAYERS)</span>
@@ -274,7 +282,7 @@ export const AmongUsIllustration: React.FC<IllustrationProps> = ({ onRegisterCli
         {onExploreClick && (
           <button
             onClick={onExploreClick}
-            className="w-full sm:w-auto bg-[#F4C430] text-[#111827] font-arcade text-xs sm:text-base px-5 sm:px-6 py-3.5 border-3 border-[#111827] shadow-[3px_3px_0_0_#111827] sm:shadow-[4px_4px_0_0_#111827] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[5px_5px_0_0_#111827] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_#111827] text-center"
+            className="w-full sm:w-auto bg-[#131b2e] hover:bg-[#1a243e] text-[#fdfbf7] font-arcade text-xs sm:text-base px-5 sm:px-6 py-3.5 border-2 border-[#22314d] shadow-[3px_3px_0_0_#04060a] hover:translate-x-[-1px] hover:translate-y-[-1px] active:translate-x-[2px] active:translate-y-[2px] text-center transition-all cursor-pointer"
           >
             EXPLORE GAME RULES
           </button>

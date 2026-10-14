@@ -23,14 +23,14 @@ const AWAITING_STATES = ['PENDING_VERIFICATION', 'PENDING', 'PROCESSING', 'NOT_S
 
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, [string, string, string]> = {
-    PAID:                 ['CONFIRMED',     '#16a34a', '#dcfce7'],
-    REJECTED:             ['REJECTED',      '#dc2626', '#fee2e2'],
-    PENDING_VERIFICATION: ['AWAITING CHECK','#d97706', '#fef3c7'],
-    PENDING:              ['PENDING',       '#6b7280', '#f3f4f6'],
-    PROCESSING:           ['PROCESSING',    '#6b7280', '#f3f4f6'],
-    NOT_STARTED:          ['NOT STARTED',   '#6b7280', '#f3f4f6'],
+    PAID:                 ['CONFIRMED',     '#4ade80', 'rgba(74, 222, 128, 0.15)'],
+    REJECTED:             ['REJECTED',      '#f87171', 'rgba(248, 113, 113, 0.15)'],
+    PENDING_VERIFICATION: ['AWAITING CHECK','#fbbf24', 'rgba(251, 191, 36, 0.15)'],
+    PENDING:              ['PENDING',       '#94a3b8', 'rgba(148, 163, 184, 0.15)'],
+    PROCESSING:           ['PROCESSING',    '#38bdf8', 'rgba(56, 189, 248, 0.15)'],
+    NOT_STARTED:          ['NOT STARTED',   '#94a3b8', 'rgba(148, 163, 184, 0.15)'],
   };
-  const [label, color, bg] = map[status] || [status, '#6b7280', '#f3f4f6'];
+  const [label, color, bg] = map[status] || [status, '#94a3b8', 'rgba(148, 163, 184, 0.15)'];
   return (
     <span className="text-[10px] font-bold px-2 py-0.5 rounded-sm border shrink-0"
       style={{ color, borderColor: color, backgroundColor: bg }}>
@@ -41,16 +41,16 @@ function StatusPill({ status }: { status: string }) {
 
 function Stat({ icon: Icon, label, value, tone }: any) {
   return (
-    <div className="border-2 border-[#111827] bg-white p-3 sm:p-4 relative overflow-hidden">
+    <div className="border-2 border-[#22314d] bg-[#0d1322] p-3 sm:p-4 relative overflow-hidden shadow-[2px_2px_0_0_#04060a]">
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0 opacity-[0.08]"
         style={{ background: tone }}
       />
       <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 relative">
-        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-sm flex items-center justify-center shrink-0" style={{ background: tone + '22' }}>
+        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-sm flex items-center justify-center shrink-0 border border-[#22314d]" style={{ background: tone + '22' }}>
           <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: tone }} />
         </div>
-        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider sm:tracking-widest font-bold text-[#111827]/50 truncate">{label}</span>
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider sm:tracking-widest font-bold text-[#94a3b8] truncate">{label}</span>
       </div>
       <p className="font-pixel text-xs sm:text-base relative truncate" style={{ color: tone }}>{value}</p>
     </div>
@@ -67,33 +67,33 @@ function ScreenshotModal({ url, onClose }: { url: string; onClose: () => void })
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-2 sm:p-4"
+      className="fixed inset-0 bg-black/85 flex items-center justify-center z-[100] p-2 sm:p-4 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="relative max-w-xl w-full bg-white border-2 border-[#111827] shadow-[4px_4px_0_0_#111827] sm:shadow-[8px_8px_0_0_#111827]"
+        className="relative max-w-xl w-full bg-[#0d1322] border-2 border-[#22314d] shadow-[0_0_30px_rgba(0,0,0,0.8)]"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b-2 border-[#111827] bg-[#111827] text-white gap-2">
-          <span className="font-pixel text-[10px] sm:text-xs truncate">UPI SCREENSHOT</span>
+        <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b-2 border-[#22314d] bg-[#070a13] text-[#fdfbf7] gap-2">
+          <span className="font-pixel text-[10px] sm:text-xs truncate text-[#fdfbf7]">UPI SCREENSHOT</span>
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <a href={url} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1 text-[11px] sm:text-xs bg-white/10 hover:bg-white/20 px-2 py-1 transition-colors">
+              className="flex items-center gap-1 text-[11px] sm:text-xs bg-white/10 hover:bg-white/20 text-[#f1f5f9] px-2 py-1 transition-colors">
               <ExternalLink className="w-3 h-3" />
               <span className="hidden sm:inline">Open original</span>
               <span className="inline sm:hidden">Original</span>
             </a>
             <button onClick={onClose}
-              className="w-6 h-6 flex items-center justify-center bg-white/10 hover:bg-[#E5005A] transition-colors">
+              className="w-6 h-6 flex items-center justify-center bg-white/10 hover:bg-[#ff2a4b] text-white transition-colors cursor-pointer">
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
-        <div className="p-2 max-h-[80vh] overflow-auto flex items-center justify-center bg-[#f3f4f6]">
+        <div className="p-2 max-h-[80vh] overflow-auto flex items-center justify-center bg-[#070a13]">
           <img
             src={url}
             alt="UPI payment screenshot"
-            className="max-w-full h-auto object-contain"
+            className="max-w-full h-auto object-contain rounded-xs"
             style={{ maxHeight: '72vh' }}
           />
         </div>
@@ -108,7 +108,7 @@ function RosterPanel({ payment }: { payment: any }) {
 
   if (roster.length === 0) {
     return (
-      <p className="text-sm text-[#111827]/40 italic py-2">No roster data available.</p>
+      <p className="text-sm text-[#94a3b8] italic py-2">No roster data available.</p>
     );
   }
 
@@ -118,27 +118,27 @@ function RosterPanel({ payment }: { payment: any }) {
         <div key={i}
           className={`flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 border rounded-sm ${
             m.participantType === 'LEADER'
-              ? 'border-[#E5005A]/40 bg-[#E5005A]/5'
-              : 'border-[#111827]/15 bg-[#111827]/3'
+              ? 'border-[#ff2a4b]/50 bg-[#ff2a4b]/10'
+              : 'border-[#22314d] bg-[#131b2e]'
           }`}
         >
           <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 text-xs sm:text-sm font-bold ${
-            m.participantType === 'LEADER' ? 'bg-[#E5005A] text-white' : 'bg-[#111827]/10 text-[#111827]'
+            m.participantType === 'LEADER' ? 'bg-[#ff2a4b] text-white shadow-[0_0_8px_rgba(255,42,75,0.4)]' : 'bg-[#070a13] text-[#94a3b8] border border-[#22314d]'
           }`}>
             {m.fullName?.charAt(0) || '?'}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-bold text-xs sm:text-sm truncate">{m.fullName}</span>
+              <span className="font-bold text-xs sm:text-sm truncate text-[#f1f5f9]">{m.fullName}</span>
               {m.participantType === 'LEADER' && (
-                <span className="text-[9px] font-bold bg-[#E5005A] text-white px-1.5 py-0.5 rounded-sm shrink-0">LEADER</span>
+                <span className="text-[9px] font-bold bg-[#ff2a4b] text-white px-1.5 py-0.5 rounded-sm shrink-0">LEADER</span>
               )}
             </div>
-            <p className="text-[11px] sm:text-xs text-[#111827]/50 mt-0.5 truncate">
+            <p className="text-[11px] sm:text-xs text-[#94a3b8] mt-0.5 truncate">
               {m.studentId} · {m.branch} · {m.year}
             </p>
-            <p className="text-[11px] sm:text-xs text-[#111827]/40 truncate">{m.college}</p>
-            <p className="text-[11px] sm:text-xs text-[#111827]/50 truncate">{m.email}</p>
+            <p className="text-[11px] sm:text-xs text-[#94a3b8]/80 truncate">{m.college}</p>
+            <p className="text-[11px] sm:text-xs text-[#38bdf8] truncate">{m.email}</p>
           </div>
         </div>
       ))}
@@ -167,45 +167,45 @@ function PaymentEvidencePanel({ payment, onViewScreenshot }: { payment: any; onV
       {entries.length > 0 && (
         <div className="space-y-2">
           {entries.map((e: any, i: number) => (
-            <div key={i} className="border-2 border-[#111827]/20 bg-white p-2.5 sm:p-3 rounded-sm">
+            <div key={i} className="border-2 border-[#22314d] bg-[#0d1322] p-2.5 sm:p-3 rounded-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 mb-1">UTR / Transaction Reference</p>
+                  <p className="text-[10px] uppercase tracking-wide font-bold text-[#94a3b8] mb-1">UTR / Transaction Reference</p>
                   <button
                     onClick={() => copy(e.transactionReference)}
-                    className="font-mono text-xs sm:text-sm bg-[#111827]/5 border border-[#111827]/20 px-3 py-1.5 hover:bg-[#111827]/10 flex items-center gap-2 transition-colors w-full text-left"
+                    className="font-mono text-xs sm:text-sm bg-[#131b2e] border border-[#22314d] text-[#f1f5f9] px-3 py-1.5 hover:bg-[#1a253c] flex items-center gap-2 transition-colors w-full text-left cursor-pointer"
                   >
                     <span className="flex-1 truncate">{e.transactionReference || '—'}</span>
-                    <Copy className="w-3.5 h-3.5 opacity-40 shrink-0" />
+                    <Copy className="w-3.5 h-3.5 opacity-50 shrink-0 text-[#94a3b8]" />
                   </button>
                   {copied === e.transactionReference && (
-                    <p className="text-[11px] text-[#16a34a] mt-0.5">✓ Copied to clipboard</p>
+                    <p className="text-[11px] text-[#4ade80] mt-0.5">✓ Copied to clipboard</p>
                   )}
                 </div>
-                <div className="shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-start pt-1.5 sm:pt-0 border-t sm:border-t-0 border-[#111827]/10">
-                  <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 sm:mb-1">Amount</p>
+                <div className="shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-start pt-1.5 sm:pt-0 border-t sm:border-t-0 border-[#22314d]">
+                  <p className="text-[10px] uppercase tracking-wide font-bold text-[#94a3b8] sm:mb-1">Amount</p>
                   <div className="text-right">
-                    <p className="font-bold text-sm tabular-nums">₹{Number(e.amount).toLocaleString('en-IN')}</p>
-                    {e.payerName && <p className="text-xs text-[#111827]/50 mt-0.5">{e.payerName}</p>}
+                    <p className="font-bold text-sm tabular-nums text-[#f1f5f9]">₹{Number(e.amount).toLocaleString('en-IN')}</p>
+                    {e.payerName && <p className="text-xs text-[#94a3b8] mt-0.5">{e.payerName}</p>}
                   </div>
                 </div>
               </div>
 
               {/* Screenshot */}
               {e.evidence?.url && (
-                <div className="mt-2.5 sm:mt-3 border border-[#111827]/15 bg-[#f9fafb] rounded-sm overflow-hidden">
-                  <div className="flex items-center justify-between px-2.5 sm:px-3 py-1.5 border-b border-[#111827]/10 bg-[#111827]/5">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#111827]/50 flex items-center gap-1">
-                      <ImageIcon className="w-3 h-3 shrink-0" /> UPI Screenshot
+                <div className="mt-2.5 sm:mt-3 border border-[#22314d] bg-[#070a13] rounded-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-2.5 sm:px-3 py-1.5 border-b border-[#22314d] bg-[#131b2e]">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#94a3b8] flex items-center gap-1">
+                      <ImageIcon className="w-3 h-3 shrink-0 text-[#38bdf8]" /> UPI Screenshot
                     </span>
                     <div className="flex items-center gap-2">
                       <button onClick={() => onViewScreenshot(e.evidence.url)}
-                        className="text-[10px] flex items-center gap-1 text-[#E5005A] font-bold hover:underline">
+                        className="text-[10px] flex items-center gap-1 text-[#ff2a4b] font-bold hover:underline cursor-pointer">
                         <ZoomIn className="w-3 h-3" /> View full
                       </button>
                     </div>
                   </div>
-                  <div className="p-2 cursor-pointer" onClick={() => onViewScreenshot(e.evidence.url)}>
+                  <div className="p-2 cursor-pointer bg-[#070a13]" onClick={() => onViewScreenshot(e.evidence.url)}>
                     <img
                       src={e.evidence.url}
                       alt="UPI screenshot"
@@ -221,34 +221,34 @@ function PaymentEvidencePanel({ payment, onViewScreenshot }: { payment: any; onV
 
       {/* Fallback: top-level UTR/evidence (no entries array) */}
       {entries.length === 0 && (topUTR || topEvidence) && (
-        <div className="border-2 border-[#111827]/20 bg-white p-2.5 sm:p-3 rounded-sm">
+        <div className="border-2 border-[#22314d] bg-[#0d1322] p-2.5 sm:p-3 rounded-sm">
           {topUTR && (
             <div className="mb-3">
-              <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 mb-1">UTR / Transaction Reference</p>
+              <p className="text-[10px] uppercase tracking-wide font-bold text-[#94a3b8] mb-1">UTR / Transaction Reference</p>
               <button
                 onClick={() => copy(topUTR)}
-                className="font-mono text-xs sm:text-sm bg-[#111827]/5 border border-[#111827]/20 px-3 py-1.5 hover:bg-[#111827]/10 flex items-center gap-2 transition-colors w-full text-left"
+                className="font-mono text-xs sm:text-sm bg-[#131b2e] border border-[#22314d] text-[#f1f5f9] px-3 py-1.5 hover:bg-[#1a253c] flex items-center gap-2 transition-colors w-full text-left cursor-pointer"
               >
                 <span className="flex-1 truncate">{topUTR}</span>
-                <Copy className="w-3.5 h-3.5 opacity-40 shrink-0" />
+                <Copy className="w-3.5 h-3.5 opacity-50 shrink-0 text-[#94a3b8]" />
               </button>
               {copied === topUTR && (
-                <p className="text-[11px] text-[#16a34a] mt-0.5">✓ Copied to clipboard</p>
+                <p className="text-[11px] text-[#4ade80] mt-0.5">✓ Copied to clipboard</p>
               )}
             </div>
           )}
           {topEvidence && (
-            <div className="border border-[#111827]/15 bg-[#f9fafb] rounded-sm overflow-hidden">
-              <div className="flex items-center justify-between px-2.5 sm:px-3 py-1.5 border-b border-[#111827]/10 bg-[#111827]/5">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-[#111827]/50 flex items-center gap-1">
-                  <ImageIcon className="w-3 h-3 shrink-0" /> UPI Screenshot
+            <div className="border border-[#22314d] bg-[#070a13] rounded-sm overflow-hidden">
+              <div className="flex items-center justify-between px-2.5 sm:px-3 py-1.5 border-b border-[#22314d] bg-[#131b2e]">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-[#94a3b8] flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3 shrink-0 text-[#38bdf8]" /> UPI Screenshot
                 </span>
                 <button onClick={() => onViewScreenshot(topEvidence)}
-                  className="text-[10px] flex items-center gap-1 text-[#E5005A] font-bold hover:underline">
+                  className="text-[10px] flex items-center gap-1 text-[#ff2a4b] font-bold hover:underline cursor-pointer">
                   <ZoomIn className="w-3 h-3" /> View full
                 </button>
               </div>
-              <div className="p-2 cursor-pointer" onClick={() => onViewScreenshot(topEvidence)}>
+              <div className="p-2 cursor-pointer bg-[#070a13]" onClick={() => onViewScreenshot(topEvidence)}>
                 <img
                   src={topEvidence}
                   alt="UPI screenshot"
@@ -261,25 +261,25 @@ function PaymentEvidencePanel({ payment, onViewScreenshot }: { payment: any; onV
       )}
 
       {entries.length === 0 && !topUTR && !topEvidence && (
-        <p className="text-sm text-[#111827]/40 italic">No payment submission yet.</p>
+        <p className="text-sm text-[#94a3b8] italic">No payment submission yet.</p>
       )}
 
       {/* Amount summary */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-wrap py-2 border-t-2 border-[#111827]/10 text-xs sm:text-sm">
-        <span className="font-bold tabular-nums">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap py-2 border-t-2 border-[#22314d] text-xs sm:text-sm">
+        <span className="font-bold tabular-nums text-[#f1f5f9]">
           ₹{Number(payment.amountPaid || 0).toLocaleString('en-IN')} paid
         </span>
-        <span className="text-[#111827]/50">
+        <span className="text-[#94a3b8]">
           of ₹{Number(payment.amountExpected || 0).toLocaleString('en-IN')} expected
           {payment.teamSize ? ` (${payment.teamSize} players)` : ''}
         </span>
         {!payment.fullyPaid && payment.status !== 'REJECTED' && (
-          <span className="text-[#dc2626] font-bold text-[10px] sm:text-xs bg-[#fee2e2] px-2 py-0.5 rounded-sm">
+          <span className="text-[#f87171] font-bold text-[10px] sm:text-xs bg-[#ef4444]/20 border border-[#ef4444] px-2 py-0.5 rounded-sm">
             SHORT ₹{Number(payment.amountRemaining || 0).toLocaleString('en-IN')}
           </span>
         )}
         {payment.fullyPaid && payment.status !== 'PAID' && payment.status !== 'REJECTED' && (
-          <span className="text-[#16a34a] font-bold text-[10px] sm:text-xs bg-[#dcfce7] px-2 py-0.5 rounded-sm">
+          <span className="text-[#4ade80] font-bold text-[10px] sm:text-xs bg-[#22c55e]/20 border border-[#22c55e] px-2 py-0.5 rounded-sm">
             FULLY COVERED ✓
           </span>
         )}
@@ -311,43 +311,43 @@ function AwaitingCard({
       {screenshotUrl && (
         <ScreenshotModal url={screenshotUrl} onClose={() => setScreenshotUrl(null)} />
       )}
-      <div className="border-2 border-[#111827] bg-white border-l-4 sm:border-l-8 border-l-[#d97706] overflow-hidden">
+      <div className="border-2 border-[#22314d] bg-[#0d1322] border-l-4 sm:border-l-8 border-l-[#f59e0b] shadow-[3px_3px_0_0_#04060a] overflow-hidden">
         {/* Header */}
         <div className="p-3 sm:p-4">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-start justify-between">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="font-pixel text-xs break-words">{p.teamName || '(no team name)'}</span>
+                <span className="font-pixel text-xs break-words text-[#fdfbf7]">{p.teamName || '(no team name)'}</span>
                 <StatusPill status={p.status} />
               </div>
-              <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 text-xs sm:text-sm text-[#111827]/70 mt-1">
-                <span className="flex items-center gap-1 min-w-0">
-                  <Users className="w-3.5 h-3.5 shrink-0" />
+              <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 text-xs sm:text-sm text-[#94a3b8] mt-1">
+                <span className="flex items-center gap-1 min-w-0 text-[#f1f5f9]">
+                  <Users className="w-3.5 h-3.5 shrink-0 text-[#ff2a4b]" />
                   <span className="truncate">{p.leaderName}</span>
                 </span>
                 <span className="flex items-center gap-1 min-w-0">
-                  <Mail className="w-3.5 h-3.5 shrink-0" />
+                  <Mail className="w-3.5 h-3.5 shrink-0 text-[#38bdf8]" />
                   <span className="truncate max-w-[180px] sm:max-w-none">{p.contactEmail}</span>
                 </span>
                 {p.contactMobile && (
                   <span className="flex items-center gap-1 shrink-0">
-                    <Phone className="w-3.5 h-3.5 shrink-0" />
+                    <Phone className="w-3.5 h-3.5 shrink-0 text-[#4ade80]" />
                     <span>{p.contactMobile}</span>
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#111827]/40 mt-1 break-words">
+              <p className="text-xs text-[#94a3b8]/70 mt-1 break-words">
                 {p.registrationId} · {p.method || 'UPI'} · ₹{Number(p.amount).toLocaleString('en-IN')}
               </p>
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#111827]/10">
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#22314d]">
               <button
                 onClick={() => onConfirm(p)}
                 disabled={busy}
                 title="Approve payment – mark as PAID and send ticket email"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 bg-[#16a34a] text-white hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 bg-[#16a34a] text-white hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-[0_0_10px_rgba(22,163,74,0.3)]"
               >
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>{busy ? 'Saving…' : 'Approve'}</span>
@@ -356,14 +356,14 @@ function AwaitingCard({
                 onClick={() => onReject(p)}
                 disabled={busy}
                 title="Reject payment – notify team leader by email"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 border-2 border-[#dc2626] text-[#dc2626] font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 hover:bg-[#dc2626] hover:text-white disabled:opacity-50 transition-colors"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 border-2 border-[#ef4444] text-[#ef4444] font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 hover:bg-[#ef4444] hover:text-white disabled:opacity-50 transition-colors cursor-pointer"
               >
                 <ShieldX className="w-4 h-4 shrink-0" />
                 <span>Reject</span>
               </button>
               <button
                 onClick={() => setExpanded(v => !v)}
-                className="flex items-center justify-center gap-1 border-2 border-[#111827]/20 text-[#111827]/50 px-2 sm:px-2.5 py-2 sm:py-2.5 hover:bg-[#111827]/5 transition-colors shrink-0"
+                className="flex items-center justify-center gap-1 border-2 border-[#22314d] text-[#94a3b8] px-2 sm:px-2.5 py-2 sm:py-2.5 hover:bg-[#131b2e] hover:text-[#f1f5f9] transition-colors shrink-0 cursor-pointer"
                 title={expanded ? 'Collapse' : 'Expand details'}
               >
                 {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -374,15 +374,15 @@ function AwaitingCard({
 
         {/* Expandable detail area */}
         {expanded && (
-          <div className="border-t-2 border-[#111827]/10">
+          <div className="border-t-2 border-[#22314d]">
             {/* Tab bar */}
-            <div className="flex border-b-2 border-[#111827]/10 bg-[#f9fafb]">
+            <div className="flex border-b-2 border-[#22314d] bg-[#070a13]">
               <button
                 onClick={() => setActiveTab('payment')}
-                className={`flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs font-bold transition-colors border-b-2 -mb-[2px] ${
+                className={`flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs font-bold transition-colors border-b-2 -mb-[2px] cursor-pointer ${
                   activeTab === 'payment'
-                    ? 'border-[#E5005A] text-[#E5005A] bg-white'
-                    : 'border-transparent text-[#111827]/50 hover:text-[#111827]'
+                    ? 'border-[#ff2a4b] text-[#ff2a4b] bg-[#0d1322]'
+                    : 'border-transparent text-[#94a3b8] hover:text-[#f1f5f9]'
                 }`}
               >
                 <ImageIcon className="w-3.5 h-3.5 shrink-0" />
@@ -390,23 +390,23 @@ function AwaitingCard({
               </button>
               <button
                 onClick={() => setActiveTab('roster')}
-                className={`flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs font-bold transition-colors border-b-2 -mb-[2px] ${
+                className={`flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs font-bold transition-colors border-b-2 -mb-[2px] cursor-pointer ${
                   activeTab === 'roster'
-                    ? 'border-[#E5005A] text-[#E5005A] bg-white'
-                    : 'border-transparent text-[#111827]/50 hover:text-[#111827]'
+                    ? 'border-[#ff2a4b] text-[#ff2a4b] bg-[#0d1322]'
+                    : 'border-transparent text-[#94a3b8] hover:text-[#f1f5f9]'
                 }`}
               >
                 <Users className="w-3.5 h-3.5 shrink-0" />
                 <span>Team Roster</span>
                 {p.roster?.length > 0 && (
-                  <span className="ml-1 bg-[#111827]/10 text-[#111827] text-[9px] px-1.5 py-0.5 rounded-full font-bold">
+                  <span className="ml-1 bg-[#131b2e] border border-[#22314d] text-[#94a3b8] text-[9px] px-1.5 py-0.5 rounded-full font-bold">
                     {p.roster.length}
                   </span>
                 )}
               </button>
             </div>
 
-            <div className="p-3 sm:p-4">
+            <div className="p-3 sm:p-4 bg-[#0d1322]">
               {activeTab === 'payment' && (
                 <PaymentEvidencePanel payment={p} onViewScreenshot={setScreenshotUrl} />
               )}
@@ -426,32 +426,32 @@ function CompactCard({ p, onViewScreenshot }: { p: any; onViewScreenshot: (url: 
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'payment' | 'roster'>('payment');
 
-  const borderColor = p.status === 'PAID' ? '#16a34a' : p.status === 'REJECTED' ? '#dc2626' : '#d97706';
-  const statusBg   = p.status === 'PAID' ? 'bg-[#f0fdf4]' : p.status === 'REJECTED' ? 'bg-[#fff5f5] opacity-80' : 'bg-white';
+  const borderColor = p.status === 'PAID' ? '#16a34a' : p.status === 'REJECTED' ? '#ef4444' : '#f59e0b';
+  const statusBg   = 'bg-[#0d1322]';
 
   return (
-    <div className={`border-2 border-[#111827] ${statusBg} overflow-hidden`}
+    <div className={`border-2 border-[#22314d] ${statusBg} shadow-[2px_2px_0_0_#04060a] overflow-hidden`}
       style={{ borderLeftWidth: 6, borderLeftColor: borderColor }}>
       <div className="p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="font-pixel text-xs break-words">{p.teamName || '(no team name)'}</span>
+              <span className="font-pixel text-xs break-words text-[#fdfbf7]">{p.teamName || '(no team name)'}</span>
               <StatusPill status={p.status} />
               {p.status === 'PAID' && p.ticketNumber && (
-                <span className="text-[10px] flex items-center gap-1 bg-[#16a34a]/10 text-[#16a34a] font-bold px-2 py-0.5 rounded-sm">
+                <span className="text-[10px] flex items-center gap-1 bg-[#22c55e]/15 border border-[#22c55e] text-[#4ade80] font-bold px-2 py-0.5 rounded-sm">
                   <Ticket className="w-3 h-3" /> {p.ticketNumber}
                 </span>
               )}
             </div>
-            <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-0.5 text-xs text-[#111827]/60">
-              <span className="truncate max-w-[150px] sm:max-w-none">{p.leaderName}</span>
+            <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-0.5 text-xs text-[#94a3b8]">
+              <span className="truncate max-w-[150px] sm:max-w-none text-[#f1f5f9]">{p.leaderName}</span>
               <span className="truncate max-w-[180px] sm:max-w-none">{p.contactEmail}</span>
               <span>{p.registrationId}</span>
-              <span className="font-bold">₹{Number(p.amountPaid || 0).toLocaleString('en-IN')}</span>
+              <span className="font-bold text-[#f1f5f9]">₹{Number(p.amountPaid || 0).toLocaleString('en-IN')}</span>
             </div>
             {p.status === 'PAID' && p.verifiedAt && (
-              <p className="text-[10px] text-[#16a34a] mt-0.5">
+              <p className="text-[10px] text-[#4ade80] mt-0.5">
                 Approved {new Date(p.verifiedAt).toLocaleString('en-IN')}
                 {p.verifiedBy ? ` by ${p.verifiedBy}` : ''}
               </p>
@@ -459,7 +459,7 @@ function CompactCard({ p, onViewScreenshot }: { p: any; onViewScreenshot: (url: 
           </div>
           <button
             onClick={() => setExpanded(v => !v)}
-            className="w-full sm:w-auto justify-center flex items-center gap-1 border-2 border-[#111827]/20 text-[#111827]/50 px-3 py-1.5 sm:py-2 hover:bg-[#111827]/5 transition-colors text-xs font-bold shrink-0"
+            className="w-full sm:w-auto justify-center flex items-center gap-1 border-2 border-[#22314d] text-[#94a3b8] px-3 py-1.5 sm:py-2 hover:bg-[#131b2e] hover:text-[#f1f5f9] transition-colors text-xs font-bold shrink-0 cursor-pointer"
           >
             <Eye className="w-3.5 h-3.5" />
             {expanded ? 'Hide' : 'View'} Details
@@ -469,14 +469,14 @@ function CompactCard({ p, onViewScreenshot }: { p: any; onViewScreenshot: (url: 
       </div>
 
       {expanded && (
-        <div className="border-t-2 border-[#111827]/10">
-          <div className="flex border-b-2 border-[#111827]/10 bg-[#f9fafb]">
+        <div className="border-t-2 border-[#22314d]">
+          <div className="flex border-b-2 border-[#22314d] bg-[#070a13]">
             <button
               onClick={() => setActiveTab('payment')}
-              className={`flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-bold transition-colors border-b-2 -mb-[2px] ${
+              className={`flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-bold transition-colors border-b-2 -mb-[2px] cursor-pointer ${
                 activeTab === 'payment'
-                  ? 'border-[#E5005A] text-[#E5005A] bg-white'
-                  : 'border-transparent text-[#111827]/50 hover:text-[#111827]'
+                  ? 'border-[#ff2a4b] text-[#ff2a4b] bg-[#0d1322]'
+                  : 'border-transparent text-[#94a3b8] hover:text-[#f1f5f9]'
               }`}
             >
               <ImageIcon className="w-3.5 h-3.5 shrink-0" />
@@ -484,17 +484,17 @@ function CompactCard({ p, onViewScreenshot }: { p: any; onViewScreenshot: (url: 
             </button>
             <button
               onClick={() => setActiveTab('roster')}
-              className={`flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-bold transition-colors border-b-2 -mb-[2px] ${
+              className={`flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-bold transition-colors border-b-2 -mb-[2px] cursor-pointer ${
                 activeTab === 'roster'
-                  ? 'border-[#E5005A] text-[#E5005A] bg-white'
-                  : 'border-transparent text-[#111827]/50 hover:text-[#111827]'
+                  ? 'border-[#ff2a4b] text-[#ff2a4b] bg-[#0d1322]'
+                  : 'border-transparent text-[#94a3b8] hover:text-[#f1f5f9]'
               }`}
             >
               <Users className="w-3.5 h-3.5 shrink-0" />
               <span>Team Roster</span>
             </button>
           </div>
-          <div className="p-3 sm:p-4">
+          <div className="p-3 sm:p-4 bg-[#0d1322]">
             {activeTab === 'payment' && (
               <PaymentEvidencePanel payment={p} onViewScreenshot={onViewScreenshot} />
             )}
@@ -634,39 +634,39 @@ export function PaymentDeskPage() {
   if (!token) {
     return (
       <div className="max-w-md mx-auto mt-6 sm:mt-12 mb-24 px-2 sm:px-0">
-        <div className="bg-white border-2 border-[#111827] shadow-[4px_4px_0_0_#111827] sm:shadow-[6px_6px_0_0_#111827] p-5 sm:p-8">
+        <div className="bg-[#0d1322] border-2 border-[#22314d] shadow-[4px_4px_0_0_#04060a] sm:shadow-[6px_6px_0_0_#04060a] p-5 sm:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-[#111827] flex items-center justify-center shrink-0">
-              <Lock className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-[#070a13] border border-[#22314d] flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5 text-[#ff2a4b]" />
             </div>
             <div>
-              <h1 className="font-pixel text-sm">PAYMENT DESK</h1>
-              <p className="text-xs text-[#111827]/60">ADG x Mosaic · Organiser access</p>
+              <h1 className="font-pixel text-sm text-[#fdfbf7]">PAYMENT DESK</h1>
+              <p className="text-xs text-[#94a3b8]">ADG x Mosaic · Organiser access</p>
             </div>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold mb-1 uppercase tracking-wide">Email</label>
+              <label className="block text-xs font-bold mb-1 uppercase tracking-wide text-[#94a3b8]">Email</label>
               <input
                 type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                className="w-full border-2 border-[#111827] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5005A]"
+                className="w-full border-2 border-[#22314d] bg-[#101726] text-[#f8fafc] px-3 py-2 text-sm focus:outline-none focus:border-[#ff2a4b]"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1 uppercase tracking-wide">Password</label>
+              <label className="block text-xs font-bold mb-1 uppercase tracking-wide text-[#94a3b8]">Password</label>
               <input
                 type="password" value={password} onChange={e => setPassword(e.target.value)} required autoFocus
-                className="w-full border-2 border-[#111827] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5005A]"
+                className="w-full border-2 border-[#22314d] bg-[#101726] text-[#f8fafc] px-3 py-2 text-sm focus:outline-none focus:border-[#ff2a4b]"
               />
             </div>
             {loginError && (
-              <p className="text-sm text-[#dc2626] flex items-center gap-2">
+              <p className="text-sm text-[#f87171] flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0" /> {loginError}
               </p>
             )}
             <button
               type="submit" disabled={loggingIn}
-              className="w-full bg-[#111827] text-white font-pixel text-xs py-3 hover:bg-[#E5005A] transition-colors disabled:opacity-50"
+              className="w-full bg-[#ff2a4b] hover:bg-[#e50914] text-white font-pixel text-xs py-3 transition-colors disabled:opacity-50 shadow-[0_0_15px_rgba(255,42,75,0.4)] cursor-pointer"
             >
               {loggingIn ? 'CHECKING…' : 'SIGN IN'}
             </button>
@@ -686,35 +686,35 @@ export function PaymentDeskPage() {
 
       {/* Reject dialog */}
       {rejecting && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-3 sm:p-4 z-50"
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-3 sm:p-4 z-50 backdrop-blur-xs"
           onClick={() => setRejecting(null)}>
-          <div className="bg-white border-2 border-[#111827] shadow-[4px_4px_0_0_#111827] sm:shadow-[8px_8px_0_0_#111827] p-4 sm:p-6 max-w-md w-full"
+          <div className="bg-[#0d1322] border-2 border-[#22314d] shadow-[0_0_30px_rgba(0,0,0,0.8)] p-4 sm:p-6 max-w-md w-full"
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 bg-[#dc2626] flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 bg-[#ef4444] flex items-center justify-center shrink-0 rounded-xs shadow-[0_0_8px_rgba(239,68,68,0.4)]">
                 <ShieldX className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0">
-                <h2 className="font-pixel text-xs">REJECT PAYMENT</h2>
-                <p className="text-xs text-[#111827]/60 mt-0.5 truncate">Team: <strong>{rejecting.teamName}</strong></p>
+                <h2 className="font-pixel text-xs text-[#fdfbf7]">REJECT PAYMENT</h2>
+                <p className="text-xs text-[#94a3b8] mt-0.5 truncate">Team: <strong className="text-[#f1f5f9]">{rejecting.teamName}</strong></p>
               </div>
             </div>
-            <p className="text-xs sm:text-sm text-[#111827]/70 mb-1 break-words">
-              An email will be sent to <strong>{rejecting.contactEmail}</strong> with the rejection reason and your contact info.
+            <p className="text-xs sm:text-sm text-[#94a3b8] mb-1 break-words">
+              An email will be sent to <strong className="text-[#f1f5f9]">{rejecting.contactEmail}</strong> with the rejection reason and your contact info.
             </p>
-            <p className="text-xs text-[#111827]/40 mb-3">Leave blank to use the default message.</p>
+            <p className="text-xs text-[#64748b] mb-3">Leave blank to use the default message.</p>
             <textarea
               value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} autoFocus
               placeholder={`e.g. No credit of ₹${Number(rejecting.amountExpected || 500).toLocaleString('en-IN')} found against this UTR. Please contact us at adg@sfit.ac.in`}
-              className="w-full border-2 border-[#111827] px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#E5005A] resize-none"
+              className="w-full border-2 border-[#22314d] bg-[#101726] text-[#f8fafc] px-3 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#ff2a4b] resize-none placeholder-[#64748b]"
             />
             <div className="flex flex-col-reverse sm:flex-row gap-2 mt-4">
               <button onClick={() => setRejecting(null)}
-                className="w-full sm:w-auto px-5 py-2.5 sm:py-3 border-2 border-[#111827] font-bold text-xs sm:text-sm hover:bg-[#111827] hover:text-white transition-colors">
+                className="w-full sm:w-auto px-5 py-2.5 sm:py-3 border-2 border-[#22314d] bg-[#131b2e] text-[#f1f5f9] font-bold text-xs sm:text-sm hover:bg-[#1a253c] transition-colors cursor-pointer">
                 Cancel
               </button>
               <button onClick={doReject} disabled={busyId === rejecting.paymentId}
-                className="flex-1 flex items-center justify-center gap-2 bg-[#dc2626] text-white font-bold text-xs sm:text-sm py-2.5 sm:py-3 hover:bg-[#b91c1c] disabled:opacity-50 transition-colors">
+                className="flex-1 flex items-center justify-center gap-2 bg-[#ef4444] text-white font-bold text-xs sm:text-sm py-2.5 sm:py-3 hover:bg-[#dc2626] disabled:opacity-50 transition-colors cursor-pointer shadow-[0_0_10px_rgba(239,68,68,0.4)]">
                 <ShieldX className="w-4 h-4 shrink-0" />
                 <span>{busyId === rejecting.paymentId ? 'Sending…' : 'Reject & Notify Team'}</span>
               </button>
@@ -726,19 +726,19 @@ export function PaymentDeskPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-pixel text-base sm:text-lg">PAYMENT DESK</h1>
-          <p className="text-xs text-[#111827]/60 mt-1">
+          <h1 className="font-pixel text-base sm:text-lg text-[#fdfbf7] drop-shadow-[0_0_8px_rgba(255,42,75,0.3)]">PAYMENT DESK</h1>
+          <p className="text-xs text-[#94a3b8] mt-1">
             Verify UPI screenshots &amp; UTRs, then approve or reject each team.
             {lastSynced && <> · Synced at {lastSynced.toLocaleTimeString()}</>}
           </p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button onClick={load} disabled={loading}
-            className="flex-1 sm:flex-initial justify-center flex items-center gap-2 border-2 border-[#111827] px-3 py-2 text-xs font-bold hover:bg-[#111827] hover:text-white transition-colors disabled:opacity-50">
-            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            className="flex-1 sm:flex-initial justify-center flex items-center gap-2 border-2 border-[#22314d] bg-[#0d1322] px-3 py-2 text-xs font-bold text-[#f1f5f9] hover:bg-[#131b2e] transition-colors disabled:opacity-50 cursor-pointer shadow-[2px_2px_0_0_#04060a]">
+            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#38bdf8] ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
           <button onClick={logout}
-            className="flex-1 sm:flex-initial justify-center flex items-center gap-2 border-2 border-[#111827] px-3 py-2 text-xs font-bold hover:bg-[#dc2626] hover:text-white hover:border-[#dc2626] transition-colors">
+            className="flex-1 sm:flex-initial justify-center flex items-center gap-2 border-2 border-[#ef4444] bg-[#0d1322] text-[#ef4444] px-3 py-2 text-xs font-bold hover:bg-[#ef4444] hover:text-white transition-colors cursor-pointer shadow-[2px_2px_0_0_#04060a]">
             <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Sign out
           </button>
         </div>
@@ -746,19 +746,19 @@ export function PaymentDeskPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-6">
-        <Stat icon={Clock}        label="Awaiting check" value={counts.awaiting}  tone="#d97706" />
-        <Stat icon={CheckCircle2} label="Confirmed"       value={counts.confirmed} tone="#16a34a" />
-        <Stat icon={XCircle}      label="Rejected"        value={counts.rejected}  tone="#dc2626" />
-        <Stat icon={IndianRupee}  label="Collected"       value={`₹${counts.collected.toLocaleString('en-IN')}`} tone="#111827" />
+        <Stat icon={Clock}        label="Awaiting check" value={counts.awaiting}  tone="#fbbf24" />
+        <Stat icon={CheckCircle2} label="Confirmed"       value={counts.confirmed} tone="#4ade80" />
+        <Stat icon={XCircle}      label="Rejected"        value={counts.rejected}  tone="#f87171" />
+        <Stat icon={IndianRupee}  label="Collected"       value={`₹${counts.collected.toLocaleString('en-IN')}`} tone="#38bdf8" />
       </div>
 
       {/* Filter + search */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="w-full sm:w-auto overflow-x-auto flex border-2 border-[#111827] divide-x-2 divide-[#111827]">
+        <div className="w-full sm:w-auto overflow-x-auto flex border-2 border-[#22314d] divide-x-2 divide-[#22314d] bg-[#0d1322] shadow-[2px_2px_0_0_#04060a]">
           {(['AWAITING', 'CONFIRMED', 'REJECTED', 'ALL'] as Filter[]).map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`flex-1 sm:flex-initial whitespace-nowrap px-2.5 sm:px-4 py-2 text-[11px] sm:text-xs font-bold transition-colors text-center ${
-                filter === f ? 'bg-[#111827] text-white' : 'hover:bg-[#111827]/10'
+              className={`flex-1 sm:flex-initial whitespace-nowrap px-2.5 sm:px-4 py-2 text-[11px] sm:text-xs font-bold transition-colors text-center cursor-pointer ${
+                filter === f ? 'bg-[#ff2a4b] text-white shadow-[0_0_10px_rgba(255,42,75,0.4)]' : 'text-[#94a3b8] hover:bg-[#131b2e] hover:text-[#f1f5f9]'
               }`}>
               {f === 'AWAITING' ? `Awaiting (${counts.awaiting})`
                 : f === 'CONFIRMED' ? `Confirmed (${counts.confirmed})`
@@ -768,39 +768,39 @@ export function PaymentDeskPage() {
           ))}
         </div>
         <div className="w-full sm:flex-1 relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#111827]/40" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search team, leader, email or UTR…"
-            className="w-full border-2 border-[#111827] pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5005A]"
+            className="w-full border-2 border-[#22314d] bg-[#0d1322] pl-9 pr-3 py-2 text-sm text-[#f1f5f9] placeholder-[#64748b] focus:outline-none focus:border-[#ff2a4b] shadow-[2px_2px_0_0_#04060a]"
           />
         </div>
       </div>
 
       {loadError && (
-        <div className="border-2 border-[#dc2626] bg-[#dc2626]/5 text-[#dc2626] px-4 py-3 mb-4 text-sm flex items-start gap-2">
+        <div className="border-2 border-[#ef4444] bg-[#ef4444]/10 text-[#f87171] px-4 py-3 mb-4 text-sm flex items-start gap-2 rounded-xs">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{loadError}</span>
-          <button onClick={() => setLoadError(null)} className="ml-auto"><X className="w-4 h-4" /></button>
+          <button onClick={() => setLoadError(null)} className="ml-auto cursor-pointer"><X className="w-4 h-4" /></button>
         </div>
       )}
 
       {/* AWAITING hint */}
       {filter === 'AWAITING' && visible.length > 0 && (
-        <div className="border-2 border-[#d97706]/40 bg-[#fef3c7] px-3 sm:px-4 py-3 mb-4 text-xs sm:text-sm flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-[#d97706]" />
-          <span className="text-[#92400e]">
+        <div className="border-2 border-[#f59e0b]/40 bg-[#f59e0b]/10 px-3 sm:px-4 py-3 mb-4 text-xs sm:text-sm flex items-start gap-2 rounded-xs">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-[#fbbf24]" />
+          <span className="text-[#fde68a]">
             Review the UPI screenshot and UTR for each team before approving.
-            Clicking <strong>Approve</strong> marks payment as received and sends the team leader their entry ticket by email.
-            Clicking <strong>Reject</strong> notifies the leader to contact the organizer.
+            Clicking <strong className="text-[#4ade80]">Approve</strong> marks payment as received and sends the team leader their entry ticket by email.
+            Clicking <strong className="text-[#f87171]">Reject</strong> notifies the leader to contact the organizer.
           </span>
         </div>
       )}
 
       {/* List */}
       {visible.length === 0 ? (
-        <div className="border-2 border-dashed border-[#111827]/30 p-8 sm:p-16 text-center">
-          <p className="font-pixel text-xs text-[#111827]/40">
+        <div className="border-2 border-dashed border-[#22314d] bg-[#0d1322]/50 p-8 sm:p-16 text-center">
+          <p className="font-pixel text-xs text-[#94a3b8]">
             {loading ? 'LOADING…'
               : filter === 'AWAITING'   ? 'NOTHING WAITING — ALL CLEAR ✓'
               : filter === 'CONFIRMED'  ? 'NO CONFIRMED PAYMENTS YET'

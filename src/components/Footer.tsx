@@ -8,9 +8,9 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
   return (
-    <footer className="bg-[#111827] text-white border-t-4 border-[#111827] pt-12 pb-8 mt-16 relative overflow-hidden">
+    <footer className="bg-[#070a13] text-white border-t-2 border-[#22314d] pt-12 pb-8 mt-16 relative overflow-hidden">
       {/* Decorative top accent line with poster colors */}
-      <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#E5005A] via-[#F4C430] to-[#00AFC6]"></div>
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#ff2a4b] via-[#e50914] to-[#00AFC6] shadow-[0_0_10px_rgba(255,42,75,0.5)]"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
@@ -21,12 +21,12 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
                 <img 
                   src="/adg-logo-full.png" 
                   alt="ADG Logo" 
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain filter drop-shadow-[0_0_6px_rgba(0,175,198,0.3)]"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/adg-logo.png'; }}
                 />
               </div>
               <div>
-                <h3 className="font-arcade text-2xl tracking-widest text-[#F7E8B5]">
+                <h3 className="font-arcade text-2xl tracking-widest text-[#fdfbf7] drop-shadow-[0_0_8px_rgba(255,42,75,0.3)]">
                   {EVENT_CONFIG.name}
                 </h3>
                 <p className="text-xs font-arcade text-[#00AFC6]">
@@ -36,17 +36,17 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
             </div>
 
             <p className="text-sm text-gray-300 max-w-md font-body leading-relaxed">
-              "<span className="tracking-[0.15em]">{EVENT_CONFIG.tagline}</span>"<br></br> An intense live-action social deduction and engineering challenge held at St. Francis Institute of Technology. Complete physical lab tasks, track player alibis, and vote out the imposter before sabotage prevails.
+              "<span className="tracking-[0.15em] text-[#ff2a4b] font-bold">{EVENT_CONFIG.tagline}</span>"<br></br> An intense live-action social deduction and engineering challenge held at St. Francis Institute of Technology. Complete physical lab tasks, track player alibis, and vote out the imposter before sabotage prevails.
             </p>
 
             <div className="flex flex-wrap gap-2 pt-2">
-              <span className="inline-flex items-center gap-1 bg-[#E5005A] text-white text-[11px] font-pixel px-2.5 py-1 border border-white">
+              <span className="inline-flex items-center gap-1 bg-[#ff2a4b] text-white text-[11px] font-pixel px-2.5 py-1 border border-[#ff2a4b] shadow-[0_0_8px_rgba(255,42,75,0.3)]">
                 <Calendar className="w-3 h-3" /> {EVENT_CONFIG.eventDateDisplay}
               </span>
-              <span className="inline-flex items-center gap-1 bg-[#00AFC6] text-[#111827] text-[11px] font-pixel px-2.5 py-1 border border-white font-bold">
+              <span className="inline-flex items-center gap-1 bg-[#00AFC6] text-white text-[11px] font-pixel px-2.5 py-1 border border-[#00AFC6] font-bold">
                 <MapPin className="w-3 h-3" /> {EVENT_CONFIG.venue}
               </span>
-              <span className="inline-flex items-center gap-1 bg-[#F4C430] text-[#111827] text-[11px] font-pixel px-2.5 py-1 border border-white font-bold">
+              <span className="inline-flex items-center gap-1 bg-[#d97706] text-white text-[11px] font-pixel px-2.5 py-1 border border-[#d97706] font-bold">
                 {EVENT_CONFIG.warningQuote}
               </span>
             </div>

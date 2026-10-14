@@ -2,21 +2,29 @@
 
 @layer base {
   :root {
-    --paper-bg: #F7E8B5;
-    --paper-grid: rgba(17, 24, 39, 0.08);
+    --poster-bg-dark: #070a13;
+    --poster-hallway-dark: #0d1322;
+    --poster-card-dark: #131b2e;
+    --poster-border: #22314d;
+    --poster-red: #ff2a4b;
+    --poster-red-glow: rgba(255, 42, 75, 0.4);
+    --poster-bone-white: #fdfbf7;
+    --poster-muted: #94a3b8;
+    --paper-bg: #070a13;
+    --paper-grid: rgba(56, 189, 248, 0.05);
     --deception-cyan: #00AFC6;
-    --deception-pink: #E5005A;
-    --deception-yellow: #F4C430;
-    --deception-green: #4CAF50;
-    --deception-dark: #111827;
+    --deception-pink: #ff2a4b;
+    --deception-yellow: #f59e0b;
+    --deception-green: #10b981;
+    --deception-dark: #070a13;
   }
 
   html, body {
     overflow-x: hidden;
     max-width: 100vw;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #F7E8B5;
-    color: #111827;
+    background-color: #070a13;
+    color: #f1f5f9;
     margin: 0;
     padding: 0;
     -webkit-text-size-adjust: 100%;
@@ -55,62 +63,166 @@
   scrollbar-width: none;
 }
 
+/* Atmospheric Corridor Sci-Fi Grid Backgrounds */
 .paper-grid-bg {
-  background-color: #F7E8B5;
+  background-color: #070a13;
   background-image: 
-    linear-gradient(to right, rgba(17, 24, 39, 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(17, 24, 39, 0.07) 1px, transparent 1px);
-  background-size: 24px 24px;
+    radial-gradient(circle at 80% 12%, rgba(255, 42, 75, 0.09) 0%, transparent 45%),
+    radial-gradient(circle at 20% 70%, rgba(0, 175, 198, 0.05) 0%, transparent 40%),
+    linear-gradient(to right, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+  background-size: auto, auto, 28px 28px, 28px 28px;
 }
 
 .paper-grid-dense {
-  background-color: #FFFDF0;
+  background-color: #0d1322;
   background-image: 
-    linear-gradient(to right, rgba(17, 24, 39, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(17, 24, 39, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 42, 75, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 42, 75, 0.07) 1px, transparent 1px);
   background-size: 16px 16px;
 }
 
 .retro-border {
-  border: 3px solid #111827;
+  border: 2.5px solid #22314d;
 }
 
 .retro-border-sm {
-  border: 2px solid #111827;
+  border: 1.5px solid #22314d;
 }
 
 .retro-shadow {
-  box-shadow: 4px 4px 0px #111827;
+  box-shadow: 4px 4px 0px #04060a;
 }
 
 .retro-shadow-lg {
-  box-shadow: 6px 6px 0px #111827;
+  box-shadow: 6px 6px 0px #04060a, 0 0 20px rgba(255, 42, 75, 0.15);
 }
 
 .retro-shadow-pink {
-  box-shadow: 4px 4px 0px #E5005A;
+  box-shadow: 4px 4px 0px #ff2a4b, 0 0 15px rgba(255, 42, 75, 0.35);
 }
 
 .retro-shadow-cyan {
-  box-shadow: 4px 4px 0px #00AFC6;
+  box-shadow: 4px 4px 0px #00AFC6, 0 0 15px rgba(0, 175, 198, 0.3);
 }
 
 .retro-shadow-yellow {
-  box-shadow: 4px 4px 0px #F4C430;
+  box-shadow: 4px 4px 0px #f59e0b;
 }
 
 .retro-btn {
-  border: 2.5px solid #111827;
-  box-shadow: 3px 3px 0px #111827;
+  border: 2px solid #22314d;
+  box-shadow: 3px 3px 0px #04060a;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .retro-btn:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px #111827;
+  box-shadow: 4px 4px 0px #04060a, 0 0 10px rgba(255, 42, 75, 0.25);
 }
 
 .retro-btn:active {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #111827;
+  box-shadow: 1px 1px 0px #04060a;
+}
+
+/* ======================================================== */
+/* POSTER COLOR THEME OVERRIDES                             */
+/* Maps legacy light-comic colors to dark thriller mystery  */
+/* ======================================================== */
+
+/* Primary card / panel backgrounds */
+.bg-\[\#FFFDF0\],
+[class*="bg-[#FFFDF0]"] {
+  background-color: #0d1322 !important;
+  color: #f1f5f9;
+}
+
+/* Secondary boxes & highlighted cards */
+.bg-\[\#F7E8B5\],
+[class*="bg-[#F7E8B5]"] {
+  background-color: #131b2e !important;
+  color: #f1f5f9;
+}
+
+/* Charcoal text -> Crisp high-visibility text */
+.text-\[\#111827\],
+[class*="text-[#111827]"] {
+  color: #f1f5f9 !important;
+}
+
+/* Muted secondary copy */
+.text-\[\#111827\]\/80,
+[class*="text-[#111827]/80"],
+.text-\[\#111827\]\/70,
+[class*="text-[#111827]/70"] {
+  color: #94a3b8 !important;
+}
+
+/* Borders */
+.border-\[\#111827\],
+[class*="border-[#111827]"] {
+  border-color: #22314d !important;
+}
+
+/* Accent Pink -> Neon Imposter Crimson Red */
+.bg-\[\#E5005A\],
+[class*="bg-[#E5005A]"] {
+  background-color: #ff2a4b !important;
+  color: #ffffff !important;
+}
+
+.text-\[\#E5005A\],
+[class*="text-[#E5005A]"] {
+  color: #ff2a4b !important;
+}
+
+.border-\[\#E5005A\],
+[class*="border-[#E5005A]"] {
+  border-color: #ff2a4b !important;
+}
+
+/* Yellow accents -> Amber / Caution Gold */
+.bg-\[\#F4C430\],
+[class*="bg-[#F4C430]"] {
+  background-color: #d97706 !important;
+  color: #fef3c7 !important;
+}
+
+.text-\[\#F4C430\],
+[class*="text-[#F4C430]"] {
+  color: #fbbf24 !important;
+}
+
+.border-\[\#F4C430\],
+[class*="border-[#F4C430]"] {
+  border-color: #d97706 !important;
+}
+
+/* Deep retro shadows */
+[class*="shadow-["][class*="#111827]"] {
+  --tw-shadow-color: #04060a !important;
+}
+
+/* Form input, select, textarea styling */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  background-color: #101726 !important;
+  color: #f8fafc !important;
+  border-color: #25334c !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  background-color: #141d30 !important;
+  border-color: #ff2a4b !important;
+  box-shadow: 0 0 0 2px rgba(255, 42, 75, 0.3) !important;
+  outline: none !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #64748b !important;
 }
