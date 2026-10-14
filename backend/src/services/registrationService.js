@@ -163,7 +163,8 @@ export class RegistrationService {
       to: leader.email,
       leaderName: leader.fullName,
       teamName: team.name,
-      registrationId
+      registrationId,
+      teamSize: studentRecords.length
     });
 
     // 8. Audit Log

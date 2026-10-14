@@ -75,6 +75,13 @@ services:
       # ---- email (optional) ----
       # Without these the app records every message but sends nothing, which is
       # safe: students can still look their ticket up on the Check Status page.
+      # Deploy scripts/email-sender.gs under sfit.aidg@gmail.com and paste its /exec
+      # URL and MAIL_TOKEN here. This is the route that works on the free plan; the
+      # SMTP keys below are only a fallback (Render free blocks outbound SMTP).
+      - key: EMAIL_RELAY_URL
+        sync: false
+      - key: EMAIL_RELAY_TOKEN
+        sync: false
       - key: EMAIL_HOST
         sync: false
       - key: EMAIL_PORT

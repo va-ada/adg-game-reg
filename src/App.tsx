@@ -20,10 +20,14 @@ export default function App() {
     const path = window.location.pathname.replace(/\/+$/, '').toLowerCase();
     if (q.has('admin') || path.endsWith('/admin')) return 'admin';
     if (q.has('payments') || path.endsWith('/payments')) return 'payments';
+    // Links in the emails open the status page as ?status=<registration id>.
+    if (q.get('status')) return 'status';
     return 'home';
   });
-  // Empty until a squad is actually registered in this session.
-  const [currentRegId, setCurrentRegId] = useState<string>('');
+  // Empty until a squad is registered in this session or arrives from an email link.
+  const [currentRegId, setCurrentRegId] = useState<string>(
+    () => new URLSearchParams(window.location.search).get('status')?.trim() || ''
+  );
 
   // Keep the host awake for as long as someone has the site open.
   useKeepAwake();
