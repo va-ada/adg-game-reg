@@ -1512,10 +1512,27 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
 
                   {/* On a phone the QR is useless (you cannot scan your own screen),
                       so tapping straight into a UPI app is the primary route. */}
+                  {/* UPI apps often block a link that pays a PERSONAL UPI ID with the
+                      amount pre-filled, and nothing is debited. Paying the UPI ID by hand
+                      inside the app always goes through, so it leads. */}
+                  <div className="p-2 border-2 border-[#111827] bg-[#F7E8B5] space-y-1.5 text-[11px] text-left">
+                    <p className="font-bold">Pay in any UPI app (always works):</p>
+                    <p>1. Open GPay / PhonePe / Paytm → <strong>Pay UPI ID</strong></p>
+                    <p>2. Paste the UPI ID:</p>
+                    <button
+                      type="button"
+                      onClick={copyVpa}
+                      className="w-full font-mono text-xs bg-[#F7E8B5] px-2 py-2 border-2 border-[#111827] break-all text-left hover:bg-[#F4C430]"
+                    >
+                      {payOrder?.vpa || 'loading…'}
+                      <span className="block mt-0.5 text-[10px] text-[#2E7D32] font-bold">{copiedVpa ? 'copied' : 'tap to copy'}</span>
+                    </button>
+                    <p>3. Enter <strong>{money(payNow)}</strong>, pay, then fill in the UTR below.</p>
+                  </div>
                   {upiUri && (
                     <a href={upiUri}
-                      className="block text-center font-arcade text-xs py-3.5 border-2 border-[#111827] bg-[#2E7D32] text-white shadow-[3px_3px_0_0_#111827] hover:brightness-110">
-                      PAY {money(payNow)} WITH ANY UPI APP
+                      className="block text-center font-arcade text-xs py-3 border-2 border-[#111827] bg-[#2E7D32] text-white shadow-[3px_3px_0_0_#111827] hover:brightness-110">
+                      OR TRY QUICK PAY {money(payNow)}
                     </a>
                   )}
                   {upiApps.length > 0 && (
@@ -1534,29 +1551,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
                     </>
                   )}
 
-                {/* Some wallets refuse intents they did not originate - a student hitting
-                    one should know to try another route rather than give up. */}
                 <p className="text-[10px] text-[#111827]/60 leading-snug">
-                  If one app refuses the payment, pick a different one, scan the QR from
-                  another phone, or copy the UPI ID below and pay manually. All three
-                  reach the same account.
+                  If Quick Pay fails or says "declined", no money is taken - pay the UPI ID
+                  by hand as above. The QR is for paying from a second phone.
                 </p>
-                  {/* Always show the raw UPI ID: it works even if every deep link and
-                      the QR fail, and it lets the payer confirm where the money goes. */}
-                  <div className="pt-1">
-                    <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/50">
-                      Or pay this UPI ID manually
-                    </p>
-                    <button
-                      type="button"
-                      onClick={copyVpa}
-                      title="Tap to copy"
-                      className="mt-1 w-full font-mono text-xs bg-[#F7E8B5] px-2 py-2 border-2 border-[#111827] break-all text-left hover:bg-[#F4C430]"
-                    >
-                      {payOrder?.vpa || 'loading…'}
-                      {copiedVpa && <span className="ml-2 text-[#2E7D32] font-bold">copied</span>}
-                    </button>
-                  </div>
 
                   <p className="text-[#111827]/80 text-[11px]">
                     Reference / note: <strong className="font-mono break-all">{createdRegistration.registrationId}</strong>

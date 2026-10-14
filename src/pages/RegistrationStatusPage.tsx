@@ -792,7 +792,7 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
               <div><strong>Attachment:</strong> DECEPTION_ENTRY_PASS_{registration.registrationId}.png</div>
             </div>
 
-            <div className="p-4 bg-white border-2 border-[#111827] text-xs font-body space-y-3 leading-relaxed">
+            <div className="p-4 bg-[#FFFDF0] border-2 border-[#111827] text-xs font-body space-y-3 leading-relaxed">
               <p>Dear {registration.leaderName || 'Squad Leader'},</p>
               <p>
                 Congratulations! Squad <strong>{registration.teamName}</strong> has been officially confirmed for <strong>DECEPTION 2026</strong>.
@@ -859,36 +859,53 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
                 </button>
               </div>}
 
-              <div className="p-4 bg-white border-2 border-[#111827] space-y-2">
+              <div className="p-4 bg-[#FFFDF0] border-2 border-[#111827] space-y-2">
                 <h4 className="font-arcade text-xs font-bold text-[#111827]">
                   Pay by UPI, then enter your reference
                 </h4>
-                {/* One button. Android's own chooser is the "pick your app" step -
-                    duplicating it with branded buttons just adds decisions. */}
+                {/* UPI apps often block a link that pays a PERSONAL UPI ID with the amount
+                    pre-filled, and nothing is debited. Typing the UPI ID inside the app is
+                    an ordinary transfer that always goes through, so it leads; the link is
+                    offered second as a shortcut. */}
+                <ol className="space-y-2 text-[11px] text-[#111827]">
+                  <li>
+                    <strong>1.</strong> Open GPay / PhonePe / Paytm / any UPI app and choose{' '}
+                    <strong>Pay UPI ID</strong> (or "Pay to UPI ID / number").
+                  </li>
+                  <li>
+                    <strong>2.</strong> Paste this UPI ID:
+                    <button type="button" onClick={copyVpa}
+                      className="mt-1 w-full font-mono text-[12px] bg-[#F7E8B5] px-2 py-2 border-2 border-[#111827] break-all text-left">
+                      {payOrder?.vpa || payCfg.upiVpa || 'loading…'}
+                      <span className="block mt-0.5 text-[10px] font-bold text-[#2E7D32]">{copiedVpa ? 'copied' : 'tap to copy'}</span>
+                    </button>
+                  </li>
+                  <li>
+                    <strong>3.</strong> Enter <strong>₹{payNow || 0}</strong> and pay.
+                  </li>
+                  <li>
+                    <strong>4.</strong> Fill in the UTR below.
+                  </li>
+                </ol>
+
                 {upiUri && (
                   <a href={upiUri}
-                    className="block text-center font-arcade text-sm py-4 border-2 border-[#111827] bg-[#2E7D32] text-white shadow-[3px_3px_0_0_#111827]">
-                    PAY ₹{payNow || 0}
+                    className="block text-center font-arcade text-xs py-3 border-2 border-[#111827] bg-[#2E7D32] text-white shadow-[3px_3px_0_0_#111827]">
+                    OR TRY QUICK PAY ₹{payNow || 0}
                   </a>
                 )}
+                <p className="text-[10px] text-[#111827]/60 leading-snug">
+                  If Quick Pay fails or says "declined", no money is taken - use steps 1-4 instead.
+                </p>
 
                 <button type="button" onClick={() => setShowQr(v => !v)}
                   className="w-full text-[11px] text-[#111827]/60 underline py-1">
-                  {showQr ? 'hide QR' : 'or scan the QR / pay the UPI ID manually'}
+                  {showQr ? 'hide QR' : 'paying from another phone? show QR'}
                 </button>
 
-                {showQr && (
-                  <div className="space-y-2">
-                    {qrImage && (
-                      <div className="flex justify-center">
-                        <img src={qrImage} alt="UPI QR" className="w-40 h-40 border-2 border-[#111827] bg-white p-1" />
-                      </div>
-                    )}
-                    <button type="button" onClick={copyVpa}
-                      className="w-full font-mono text-[11px] bg-[#F7E8B5] px-2 py-2 border-2 border-[#111827] break-all">
-                      {payOrder?.vpa || payCfg.upiVpa || 'loading…'}
-                      {copiedVpa && <span className="ml-2 text-[#2E7D32] font-bold">copied</span>}
-                    </button>
+                {showQr && qrImage && (
+                  <div className="flex justify-center">
+                    <img src={qrImage} alt="UPI QR" className="w-40 h-40 border-2 border-[#111827] bg-white p-1" />
                   </div>
                 )}
 
