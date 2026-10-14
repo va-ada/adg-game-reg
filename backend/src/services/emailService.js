@@ -16,6 +16,18 @@ import { perHeadAmount, currency, expectedAmountForTeamSize } from '../utils/fee
 
 const RELAY_TIMEOUT_MS = 20000;
 
+/**
+ * Gmail through Apps Script allows roughly 100 recipients a day. Sending all four
+ * messages caps the event at ~33 squads a day, so by default only the two a squad
+ * cannot do without go out: the confirmed pass and a payment rejection (they must
+ * act on it). The others stay in the log. EMAIL_SEND_ALL=true sends everything.
+ */
+const ESSENTIAL_TYPES = new Set(['REGISTRATION_CONFIRMED', 'PAYMENT_REJECTED']);
+
+export function shouldSend(type) {
+  return process.env.EMAIL_SEND_ALL === 'true' || ESSENTIAL_TYPES.has(type);
+}
+
 /** Everything a participant typed goes into HTML through this. */
 export function escapeHtml(value) {
   return String(value ?? '')
@@ -188,6 +200,11 @@ export class EmailService {
       status: 'QUEUED'
     };
     this.emailLogs.unshift(record);
+    if (!shouldSend(email.type)) {
+      record.status = 'SKIPPED_TO_SAVE_QUOTA';
+      record.delivery = Promise.resolve(record);
+      return record;
+    }
     console.log(`[EmailService] Queued ${email.type} for ${email.to}`);
     // Fire and forget: delivery updates the record in place once it settles.
     record.delivery = this.deliver(record);

@@ -22,6 +22,7 @@ process.env.EMAIL_RELAY_URL = `http://127.0.0.1:${port}/exec`;
 process.env.EMAIL_RELAY_TOKEN = 'tok123';
 process.env.APP_URL = 'https://deception.example.com/';
 process.env.PER_HEAD_AMOUNT = '50';
+process.env.EMAIL_SEND_ALL = 'true'; // template checks below exercise every type
 const { EmailService, statusLink, escapeHtml } = await import('../backend/src/services/emailService.js');
 const svc = new EmailService();
 let pass = 0; const ok = (c, m) => { assert.ok(c, m); pass++; console.log('  ✓', m); };
@@ -76,6 +77,20 @@ r = await quiet.sendConfirmationEmail({ to: 'i@x.in', leaderName: 'I', teamName:
 await r.delivery;
 ok(quiet.mode === 'LOG_ONLY' && r.status === 'LOGGED_NOT_SENT', 'no config -> logged only');
 ok(!r.body.includes('/registration/status') && r.body.includes('Check Status page') && !r.html.includes('href='), 'no broken relative link when site URL unknown');
+
+// quota saver: by default only the confirmed pass and rejections go out
+process.env.EMAIL_RELAY_URL = `http://127.0.0.1:${port}/exec`; process.env.EMAIL_RELAY_TOKEN = 'tok123'; mode = 'ok';
+delete process.env.EMAIL_SEND_ALL;
+const saver = new EmailService(); const before = received.length;
+r = await saver.sendRegistrationReceivedEmail({ to: 'j@x.in', leaderName: 'J', teamName: 'T', registrationId: 'DEC-110', teamSize: 5 }); await r.delivery;
+ok(r.status === 'SKIPPED_TO_SAVE_QUOTA', 'default: registration-received skipped');
+r = await saver.sendVerificationPendingEmail({ to: 'j@x.in', leaderName: 'J', teamName: 'T', registrationId: 'DEC-110', transactionReference: 'U' }); await r.delivery;
+ok(r.status === 'SKIPPED_TO_SAVE_QUOTA', 'default: verification-pending skipped');
+r = await saver.sendConfirmationEmail({ to: 'j@x.in', leaderName: 'J', teamName: 'T', registrationId: 'DEC-110', ticketNumber: 'T', amount: 250 }); await r.delivery;
+ok(r.status === 'SENT', 'default: confirmation still sent');
+r = await saver.sendPaymentRejectedEmail({ to: 'j@x.in', leaderName: 'J', teamName: 'T', registrationId: 'DEC-110', reason: 'x' }); await r.delivery;
+ok(r.status === 'SENT', 'default: rejection still sent');
+ok(received.length - before === 2, 'exactly 2 of 4 reached the relay');
 
 console.log(`\n${pass} checks passed`);
 srv.close();
