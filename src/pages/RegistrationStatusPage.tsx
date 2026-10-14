@@ -361,14 +361,34 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
   };
 
   const isConfirmed = registration?.status === 'CONFIRMED' || registration?.payment?.status === 'PAID';
-  const isPendingVerification = registration?.payment?.status === 'PENDING_VERIFICATION';
-  // Drive this off what the squad still owes rather than off status strings. The old
-  // check compared against 'PENDING_PAYMENT' - the enum is 'PAYMENT_PENDING', the words
-  // transposed - so a freshly registered squad never saw the pay button at all.
+  const isPendingVerification =
+    !isConfirmed && (
+      registration?.payment?.status === 'PENDING_VERIFICATION' ||
+      registration?.status === 'PAYMENT_VERIFICATION' ||
+      registration?.status === 'PENDING_VERIFICATION' ||
+      Boolean(registration?.payment?.transactionReference && !isConfirmed)
+    );
+  // Drive this off what the squad still owes rather than off status strings.
   const isPaymentPending =
-    Number(registration?.payment?.amountRemaining ?? 0) > 0 &&
-    registration?.status !== 'CONFIRMED' &&
+    !isConfirmed &&
+    !isPendingVerification &&
+    (Number(registration?.payment?.amountRemaining ?? 0) > 0 ||
+     registration?.status === 'PAYMENT_PENDING' ||
+     registration?.payment?.status === 'PENDING' ||
+     registration?.payment?.status === 'NOT_STARTED') &&
     registration?.status !== 'REJECTED';
+
+  const registrationDisplayStatus = isConfirmed
+    ? 'CONFIRMED'
+    : isPendingVerification
+    ? 'VERIFICATION PENDING'
+    : (registration?.status?.replace(/_/g, ' ') || 'PENDING');
+
+  const paymentDisplayStatus = isConfirmed
+    ? 'PAID'
+    : isPendingVerification
+    ? 'PENDING VERIFICATION'
+    : (registration?.payment?.status?.replace(/_/g, ' ') || 'PENDING');
 
   return (
     <div className="max-w-4xl mx-auto px-3.5 sm:px-4 py-5 sm:py-8 space-y-6 sm:space-y-8">
@@ -427,25 +447,25 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
               </div>
 
               {/* Status Badges */}
-              <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-3">
+              <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
                 <div className="text-left sm:text-right">
                   <span className="text-[9px] sm:text-[10px] font-pixel block text-gray-500">REGISTRATION</span>
-                  <span className={`inline-block font-pixel text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 border border-[#111827] ${
+                  <span className={`inline-block font-pixel text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 border border-[#111827] tracking-tight sm:tracking-normal ${
                     isConfirmed ? 'bg-[#4CAF50] text-white' : 'bg-[#F4C430] text-[#111827]'
                   }`}>
-                    {registration.status}
+                    {registrationDisplayStatus}
                   </span>
                 </div>
                 <div className="text-right">
                   <span className="text-[9px] sm:text-[10px] font-pixel block text-gray-500">PAYMENT</span>
-                  <span className={`inline-block font-pixel text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 border border-[#111827] ${
-                    registration.payment?.status === 'PAID'
+                  <span className={`inline-block font-pixel text-[9px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 border border-[#111827] tracking-tight sm:tracking-normal ${
+                    isConfirmed
                       ? 'bg-[#4CAF50] text-white'
                       : isPendingVerification
                       ? 'bg-[#00AFC6] text-white'
                       : 'bg-[#E5005A] text-white'
                   }`}>
-                    {registration.payment?.status || 'PENDING'}
+                    {paymentDisplayStatus}
                   </span>
                 </div>
               </div>
@@ -563,22 +583,75 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
           {/* CASE B: PAYMENT PENDING VERIFICATION */}
           {/* ---------------------------------------------------- */}
           {isPendingVerification && (
-            <div className="bg-[#FFFDF0] border-3 sm:border-4 border-[#00AFC6] shadow-[4px_4px_0_0_#111827] sm:shadow-[6px_6px_0_0_#111827] p-4 sm:p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-[#00AFC6] animate-spin shrink-0" />
-                <h3 className="font-arcade text-sm sm:text-base font-bold text-[#111827]">
-                  UNDER VERIFICATION BY ADG DESK
-                </h3>
+            <div className="bg-[#111827] text-white border-3 sm:border-4 border-[#111827] shadow-[4px_4px_0_0_#00AFC6] sm:shadow-[6px_6px_0_0_#00AFC6] p-4 sm:p-8 space-y-5 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-6 border-b border-gray-700 pb-5 sm:pb-6">
+                <div className="space-y-2.5 text-center sm:text-left w-full sm:w-auto">
+                  <span className="bg-[#00AFC6] text-[#111827] font-pixel text-[9px] sm:text-xs px-2.5 sm:px-3 py-1 border border-white inline-flex items-center gap-1.5 font-bold shadow-[2px_2px_0_0_#000]">
+                    <Clock className="w-3.5 h-3.5 animate-spin shrink-0 text-[#111827]" />
+                    PAYMENT PENDING VERIFICATION
+                  </span>
+                  <h3 className="font-pixel text-lg sm:text-2xl text-[#F7E8B5]">
+                    ENTRY PASS UNDER VERIFICATION
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-300 font-body max-w-lg leading-relaxed">
+                    Your manual UPI payment details have been recorded and are currently under verification by the ADG Admin Desk. Once approved, your official QR Tournament Pass will be unlocked automatically.
+                  </p>
+
+                  {/* Verification Details Strip */}
+                  <div className="bg-[#1F2937] border-2 border-[#00AFC6]/40 p-3 text-left space-y-1.5 text-xs font-mono">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-gray-300 gap-1">
+                      <span className="text-gray-400">Payment Reference (UTR):</span>
+                      <strong className="text-[#00AFC6] font-bold break-all">
+                        {registration.payment?.transactionReference || 'Proof Recorded'}
+                      </strong>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-gray-300 gap-1">
+                      <span className="text-gray-400">Amount Paid:</span>
+                      <strong className="text-[#F4C430] font-bold">
+                        ₹{registration.payment?.amountPaid ?? registration.payment?.amountExpected ?? 500} INR
+                      </strong>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-gray-300 gap-1 pt-0.5 border-t border-gray-700">
+                      <span className="text-gray-400">Verification Desk:</span>
+                      <span className="text-[#4CAF50] font-bold">
+                        SFIT Room 028 • Verification in progress
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visual Pass Preview Ticket Placeholder */}
+                <div className="bg-white border-3 sm:border-4 border-[#00AFC6] p-2.5 sm:p-3 shadow-[3px_3px_0_0_#000] flex flex-col items-center shrink-0 w-full sm:w-auto max-w-[200px] sm:max-w-none">
+                  <div className="w-32 h-32 sm:w-36 sm:h-36 bg-[#111827] border-2 border-dashed border-[#00AFC6] flex flex-col items-center justify-center p-2 text-center gap-1.5 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[#00AFC6]/10 animate-pulse pointer-events-none" />
+                    <Clock className="w-8 h-8 text-[#00AFC6] animate-spin" />
+                    <span className="font-pixel text-[8px] sm:text-[9px] text-[#F7E8B5] tracking-wider uppercase leading-tight font-bold">
+                      VERIFYING PAYMENT
+                    </span>
+                    <span className="font-mono text-[8px] text-gray-300 leading-tight">
+                      Pass Unlocks Soon
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono text-[#111827] font-bold mt-1">
+                    {registration.registrationId}
+                  </span>
+                </div>
               </div>
-              <p className="text-xs sm:text-sm font-body text-[#111827]/90 leading-relaxed">
-                Your manual UPI transfer proof has been recorded. Reference UTR: <strong className="font-mono bg-[#F7E8B5] px-1 break-all">{registration.payment?.transactionReference}</strong>. An organizer will approve your payment shortly. You can re-check this page anytime.
-              </p>
-              <div className="flex gap-2">
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
                 <button
                   onClick={() => loadRegistration(registration.registrationId)}
-                  className="w-full sm:w-auto bg-[#00AFC6] text-[#111827] font-arcade text-xs px-4 py-2.5 border-2 border-[#111827] shadow-[2px_2px_0_0_#111827]"
+                  disabled={loading}
+                  className="w-full sm:w-auto bg-[#00AFC6] text-[#111827] font-arcade text-xs px-5 py-3 border-2 border-white shadow-[2px_2px_0_0_#FFF] hover:bg-white transition-all flex items-center justify-center gap-2"
                 >
-                  REFRESH STATUS
+                  <Clock className="w-4 h-4 shrink-0" /> {loading ? 'CHECKING...' : 'REFRESH VERIFICATION STATUS'}
+                </button>
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="w-full sm:w-auto bg-[#F4C430] text-[#111827] font-arcade text-xs px-5 py-3 border-2 border-white shadow-[2px_2px_0_0_#FFF] hover:bg-white transition-all flex items-center justify-center gap-2"
+                >
+                  <CreditCard className="w-4 h-4 shrink-0" /> UPDATE PAYMENT / UTR
                 </button>
               </div>
             </div>
@@ -588,29 +661,52 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
           {/* CASE C: PAYMENT NOT STARTED / PENDING */}
           {/* ---------------------------------------------------- */}
           {isPaymentPending && (
-            <div className="bg-[#F7E8B5] border-3 sm:border-4 border-[#E5005A] shadow-[4px_4px_0_0_#111827] sm:shadow-[6px_6px_0_0_#111827] p-4 sm:p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-[#E5005A] shrink-0" />
-                <h3 className="font-arcade text-sm sm:text-base font-bold text-[#111827]">
-                  PAYMENT PENDING ({registration?.payment?.amountRemaining != null
-                    ? `₹${registration.payment.amountRemaining} remaining`
-                    : 'amount pending'})
-                </h3>
+            <div className="bg-[#111827] text-white border-3 sm:border-4 border-[#111827] shadow-[4px_4px_0_0_#E5005A] sm:shadow-[6px_6px_0_0_#E5005A] p-4 sm:p-8 space-y-5 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-6 border-b border-gray-700 pb-5 sm:pb-6">
+                <div className="space-y-2.5 text-center sm:text-left w-full sm:w-auto">
+                  <span className="bg-[#E5005A] text-white font-pixel text-[9px] sm:text-xs px-2.5 sm:px-3 py-1 border border-white inline-flex items-center gap-1.5 font-bold shadow-[2px_2px_0_0_#000]">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    PAYMENT REQUIRED
+                  </span>
+                  <h3 className="font-pixel text-lg sm:text-2xl text-[#F7E8B5]">
+                    PAYMENT PENDING ({registration?.payment?.amountRemaining != null
+                      ? `₹${registration.payment.amountRemaining} remaining`
+                      : 'amount pending'})
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-300 font-body max-w-lg leading-relaxed">
+                    Squad registration has been initiated, but payment is not yet completed. Complete payment via UPI QR code or instant testing to confirm your slot in Room 028.
+                  </p>
+                </div>
+
+                <div className="bg-white border-3 sm:border-4 border-[#E5005A] p-2.5 sm:p-3 shadow-[3px_3px_0_0_#000] flex flex-col items-center shrink-0 w-full sm:w-auto max-w-[200px] sm:max-w-none">
+                  <div className="w-32 h-32 sm:w-36 sm:h-36 bg-[#111827] border-2 border-dashed border-[#E5005A] flex flex-col items-center justify-center p-2 text-center gap-1.5">
+                    <CreditCard className="w-8 h-8 text-[#E5005A]" />
+                    <span className="font-pixel text-[8px] sm:text-[9px] text-[#F7E8B5] tracking-wider uppercase leading-tight font-bold">
+                      AWAITING PAYMENT
+                    </span>
+                    <span className="font-mono text-[8px] text-gray-400">
+                      Slot Not Locked
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono text-[#111827] font-bold mt-1">
+                    {registration.registrationId}
+                  </span>
+                </div>
               </div>
-              <p className="text-xs sm:text-sm font-body text-[#111827]/90 leading-relaxed">
-                Squad registration has been initiated, but payment is not yet completed. Complete payment via instant mock testing or scan the UPI QR code to confirm your slot in Room 028.
-              </p>
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="w-full sm:w-auto bg-[#E5005A] text-white font-arcade text-xs px-6 py-3 border-2 border-[#111827] shadow-[3px_3px_0_0_#111827] flex items-center justify-center gap-2 hover:bg-[#111827]"
-              >
-                <CreditCard className="w-4 h-4 shrink-0" />
-                {registration?.payment?.amountRemaining > 0
-                  ? `PAY REMAINING ₹${registration.payment.amountRemaining}`
-                  : registration?.payment?.amountExpected
-                    ? `COMPLETE SQUAD PAYMENT (₹${registration.payment.amountExpected})`
-                    : 'COMPLETE SQUAD PAYMENT'}
-              </button>
+
+              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="w-full sm:w-auto bg-[#E5005A] text-white font-arcade text-xs px-6 py-3 border-2 border-white shadow-[2px_2px_0_0_#FFF] flex items-center justify-center gap-2 hover:bg-[#111827] transition-all"
+                >
+                  <CreditCard className="w-4 h-4 shrink-0" />
+                  {registration?.payment?.amountRemaining > 0
+                    ? `PAY REMAINING ₹${registration.payment.amountRemaining}`
+                    : registration?.payment?.amountExpected
+                      ? `COMPLETE SQUAD PAYMENT (₹${registration.payment.amountExpected})`
+                      : 'COMPLETE SQUAD PAYMENT'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -732,8 +828,8 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
       {/* COMPLETE PAYMENT MODAL */}
       {/* ---------------------------------------------------- */}
       {showPaymentModal && registration && (
-        <div className="fixed inset-0 z-50 bg-[#111827]/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#FFFDF0] border-4 border-[#111827] shadow-[8px_8px_0_0_#000] max-w-lg w-full p-6 space-y-4">
+        <div className="fixed inset-0 z-50 bg-[#111827]/80 backdrop-blur-xs flex items-center justify-center p-3.5 sm:p-4">
+          <div className="bg-[#FFFDF0] border-4 border-[#111827] shadow-[8px_8px_0_0_#000] max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4">
             <div className="flex items-center justify-between border-b-2 border-[#111827] pb-3">
               <h3 className="font-arcade text-base font-bold text-[#111827]">
                 COMPLETE PAYMENT FOR {registration.registrationId}
