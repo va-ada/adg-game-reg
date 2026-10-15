@@ -193,7 +193,14 @@ export class ExcelService {
       const invoice = store.invoices.find(i => i.registrationId === reg.registrationId);
 
       const memberIds = team?.memberIds || [];
-      const teamStudents = store.students.filter(s => memberIds.includes(s._id) || memberIds.includes(String(s._id)));
+      const teamStudents = memberIds.map((mid, idx) => {
+        const stu = store.students.find(s => String(s._id) === String(mid));
+        if (!stu) return null;
+        return {
+          ...stu,
+          participantType: idx === 0 ? 'LEADER' : 'MEMBER'
+        };
+      }).filter(Boolean);
 
       teamStudents.forEach((stu) => {
         const isSfit = stu.collegeType === 'SFIT' || stu.isSfit !== false || stu.college === 'SFIT';
@@ -202,7 +209,7 @@ export class ExcelService {
         const row = worksheet.addRow({
           registrationId: reg.registrationId,
           teamName: reg.teamName,
-          participantType: (team && String(team.leaderId) === String(stu._id)) ? 'LEADER' : 'MEMBER',
+          participantType: stu.participantType,
           studentId: stu.studentId,
           fullName: stu.fullName,
           collegeType: isSfit ? 'SFIT STUDENT' : 'NON-SFIT',

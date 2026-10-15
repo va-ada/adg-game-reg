@@ -57,13 +57,49 @@ function Stat({ icon: Icon, label, value, tone }: any) {
   );
 }
 
+/* ────────────── Google Drive & Image Helper ────────────── */
+function getDriveInfo(url: string | null | undefined): { isDrive: boolean; previewUrl: string; thumbUrl: string; openUrl: string } {
+  if (!url || typeof url !== 'string') {
+    return { isDrive: false, previewUrl: '', thumbUrl: '', openUrl: '' };
+  }
+  const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]+)/;
+  const match = url.match(driveRegex);
+  if (match && match[1]) {
+    const fileId = match[1];
+    return {
+      isDrive: true,
+      previewUrl: `https://drive.google.com/file/d/${fileId}/preview`,
+      thumbUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w600`,
+      openUrl: `https://drive.google.com/file/d/${fileId}/view`
+    };
+  }
+  return {
+    isDrive: false,
+    previewUrl: url,
+    thumbUrl: url,
+    openUrl: url
+  };
+}
+
 /* ────────────── screenshot modal ────────────── */
-function ScreenshotModal({ url, onClose }: { url: string; onClose: () => void }) {
+function ScreenshotModal({
+  url,
+  title = 'UPI PAYMENT SCREENSHOT',
+  subtitle,
+  onClose
+}: {
+  url: string;
+  title?: string;
+  subtitle?: string;
+  onClose: () => void;
+}) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
   }, [onClose]);
+
+  const drive = getDriveInfo(url);
 
   return (
     <div
@@ -71,14 +107,17 @@ function ScreenshotModal({ url, onClose }: { url: string; onClose: () => void })
       onClick={onClose}
     >
       <div
-        className="relative max-w-xl w-full bg-[#0d1322] border-2 border-[#22314d] shadow-[0_0_30px_rgba(0,0,0,0.8)]"
+        className="relative max-w-2xl w-full bg-[#0d1322] border-2 border-[#22314d] shadow-[0_0_30px_rgba(0,0,0,0.8)] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b-2 border-[#22314d] bg-[#070a13] text-[#fdfbf7] gap-2">
-          <span className="font-pixel text-[10px] sm:text-xs truncate text-[#fdfbf7]">UPI SCREENSHOT</span>
+          <div>
+            <span className="font-pixel text-[10px] sm:text-xs truncate text-[#fdfbf7] block">{title}</span>
+            {subtitle && <span className="text-[10px] text-[#94a3b8] font-mono">{subtitle}</span>}
+          </div>
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <a href={url} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1 text-[11px] sm:text-xs bg-white/10 hover:bg-white/20 text-[#f1f5f9] px-2 py-1 transition-colors">
+            <a href={drive.openUrl} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1 text-[11px] sm:text-xs bg-white/10 hover:bg-white/20 text-[#f1f5f9] px-2 py-1 transition-colors border border-white/20">
               <ExternalLink className="w-3 h-3" />
               <span className="hidden sm:inline">Open original</span>
               <span className="inline sm:hidden">Original</span>
@@ -89,13 +128,37 @@ function ScreenshotModal({ url, onClose }: { url: string; onClose: () => void })
             </button>
           </div>
         </div>
-        <div className="p-2 max-h-[80vh] overflow-auto flex items-center justify-center bg-[#070a13]">
-          <img
-            src={url}
-            alt="UPI payment screenshot"
-            className="max-w-full h-auto object-contain rounded-xs"
-            style={{ maxHeight: '72vh' }}
-          />
+        <div className="p-3 max-h-[80vh] overflow-auto flex items-center justify-center bg-[#070a13]">
+          {drive.isDrive ? (
+            <div className="w-full flex flex-col items-center gap-2">
+              <iframe
+                src={drive.previewUrl}
+                className="w-full h-[65vh] border-0 rounded-xs bg-[#0d1322]"
+                title={title}
+                allow="autoplay"
+              />
+              <a
+                href={drive.openUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-arcade text-[#38bdf8] hover:underline flex items-center gap-1"
+              >
+                <ExternalLink className="w-3 h-3" /> Can't see the preview? Open in Google Drive
+              </a>
+            </div>
+          ) : (
+            <img
+              src={url}
+              alt={title}
+              className="max-w-full h-auto object-contain rounded-xs"
+              style={{ maxHeight: '72vh' }}
+              onError={(e) => {
+                if (drive.isDrive && e.currentTarget.src !== drive.openUrl) {
+                  e.currentTarget.style.display = 'none';
+                }
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -103,7 +166,13 @@ function ScreenshotModal({ url, onClose }: { url: string; onClose: () => void })
 }
 
 /* ────────────── team roster panel ────────────── */
-function RosterPanel({ payment }: { payment: any }) {
+function RosterPanel({
+  payment,
+  onViewScreenshot
+}: {
+  payment: any;
+  onViewScreenshot?: (url: string, title?: string, subtitle?: string) => void;
+}) {
   const roster: any[] = payment.roster || [];
 
   if (roster.length === 0) {
@@ -113,146 +182,280 @@ function RosterPanel({ payment }: { payment: any }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      {roster.map((m: any, i: number) => (
-        <div key={i}
-          className={`flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 border rounded-sm ${
-            m.participantType === 'LEADER'
-              ? 'border-[#ff2a4b]/50 bg-[#ff2a4b]/10'
-              : 'border-[#22314d] bg-[#131b2e]'
-          }`}
-        >
-          <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 text-xs sm:text-sm font-bold ${
-            m.participantType === 'LEADER' ? 'bg-[#ff2a4b] text-white shadow-[0_0_8px_rgba(255,42,75,0.4)]' : 'bg-[#070a13] text-[#94a3b8] border border-[#22314d]'
-          }`}>
-            {m.fullName?.charAt(0) || '?'}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-bold text-xs sm:text-sm truncate text-[#f1f5f9]">{m.fullName}</span>
-              {m.participantType === 'LEADER' && (
-                <span className="text-[9px] font-bold bg-[#ff2a4b] text-white px-1.5 py-0.5 rounded-sm shrink-0">LEADER</span>
-              )}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between text-xs text-[#94a3b8] border-b border-[#22314d] pb-1.5">
+        <span>SQUAD MEMBERS ({roster.length})</span>
+        <span className="text-[10px] text-[#ff2a4b] font-bold">1st Member is Leader</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {roster.map((m: any, i: number) => {
+          const isLeader = i === 0;
+          const idDrive = getDriveInfo(m.idCardUrl);
+          return (
+            <div key={i}
+              className={`flex flex-col justify-between p-2.5 sm:p-3 border rounded-sm ${
+                isLeader
+                  ? 'border-[#ff2a4b]/60 bg-[#ff2a4b]/10'
+                  : 'border-[#22314d] bg-[#131b2e]'
+              }`}
+            >
+              <div className="flex items-start gap-2.5 sm:gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs sm:text-sm font-bold ${
+                  isLeader ? 'bg-[#ff2a4b] text-white shadow-[0_0_8px_rgba(255,42,75,0.4)]' : 'bg-[#070a13] text-[#94a3b8] border border-[#22314d]'
+                }`}>
+                  {m.fullName?.charAt(0) || '?'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-bold text-xs sm:text-sm truncate text-[#f1f5f9]">{m.fullName}</span>
+                    {isLeader && (
+                      <span className="text-[9px] font-bold bg-[#ff2a4b] text-white px-1.5 py-0.5 rounded-sm shrink-0">LEADER</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-[#94a3b8] mt-0.5 truncate">
+                    {m.studentId} · {m.branch} · {m.year}
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-[#94a3b8]/80 truncate">{m.college}</p>
+                  <p className="text-[11px] sm:text-xs text-[#38bdf8] truncate">{m.email}</p>
+                </div>
+              </div>
+
+              {/* College ID card preview */}
+              <div className="mt-2 pt-2 border-t border-[#22314d]/60 flex items-center justify-between gap-2">
+                {m.idCardUrl ? (
+                  <>
+                    <div
+                      onClick={() => onViewScreenshot?.(m.idCardUrl, 'COLLEGE ID CARD', `${m.fullName} (${m.studentId})`)}
+                      className="w-12 h-8 border border-[#22314d] bg-[#070a13] rounded-xs overflow-hidden cursor-pointer hover:border-[#38bdf8] shrink-0 flex items-center justify-center shadow-[1px_1px_0_0_#000]"
+                      title="Click to preview College ID Card"
+                    >
+                      <img
+                        src={idDrive.isDrive ? idDrive.thumbUrl : m.idCardUrl}
+                        alt="ID Card"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onViewScreenshot?.(m.idCardUrl, 'COLLEGE ID CARD', `${m.fullName} (${m.studentId})`)}
+                        className="text-[10px] font-bold text-[#38bdf8] hover:text-white bg-[#070a13] border border-[#22314d] px-2 py-0.5 rounded-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" /> Preview ID
+                      </button>
+                      <a
+                        href={idDrive.openUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] text-[#94a3b8] hover:text-white"
+                        title="Open in new tab"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-[10px] text-[#94a3b8]/60 italic">ID Card: Pending</span>
+                )}
+              </div>
             </div>
-            <p className="text-[11px] sm:text-xs text-[#94a3b8] mt-0.5 truncate">
-              {m.studentId} · {m.branch} · {m.year}
-            </p>
-            <p className="text-[11px] sm:text-xs text-[#94a3b8]/80 truncate">{m.college}</p>
-            <p className="text-[11px] sm:text-xs text-[#38bdf8] truncate">{m.email}</p>
-          </div>
-        </div>
-      ))}
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 /* ────────────── payment evidence section ────────────── */
-function PaymentEvidencePanel({ payment, onViewScreenshot }: { payment: any; onViewScreenshot: (url: string) => void }) {
+function PaymentEvidencePanel({
+  payment,
+  onViewScreenshot
+}: {
+  payment: any;
+  onViewScreenshot: (url: string, title?: string, subtitle?: string) => void;
+}) {
   const entries: any[] = payment.entries || [];
   const [copied, setCopied] = useState<string | null>(null);
 
+  const fallbackCopy = (text: string) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch {}
+    document.body.removeChild(ta);
+  };
+
   const copy = (text: string) => {
-    navigator.clipboard?.writeText(text);
+    if (!text) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    } catch {
+      fallbackCopy(text);
+    }
     setCopied(text);
     setTimeout(() => setCopied(null), 1800);
   };
 
-  // Top-level evidence (non-entries based payment)
-  const topEvidence = payment.evidence?.url;
-  const topUTR = payment.transactionReference;
+  // Top-level evidence (or resolved evidence from entries / documents)
+  const resolvedEvidence = payment.evidence?.url || payment.paymentEvidence || entries.find((e: any) => e.evidence?.url)?.evidence?.url;
+  const topUTR = payment.transactionReference || entries[0]?.transactionReference;
 
   return (
     <div className="space-y-3">
       {/* Entries-based submissions */}
       {entries.length > 0 && (
         <div className="space-y-2">
-          {entries.map((e: any, i: number) => (
-            <div key={i} className="border-2 border-[#22314d] bg-[#0d1322] p-2.5 sm:p-3 rounded-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] uppercase tracking-wide font-bold text-[#94a3b8] mb-1">UTR / Transaction Reference</p>
-                  <button
-                    onClick={() => copy(e.transactionReference)}
-                    className="font-mono text-xs sm:text-sm bg-[#131b2e] border border-[#22314d] text-[#f1f5f9] px-3 py-1.5 hover:bg-[#1a253c] flex items-center gap-2 transition-colors w-full text-left cursor-pointer"
-                  >
-                    <span className="flex-1 truncate">{e.transactionReference || '—'}</span>
-                    <Copy className="w-3.5 h-3.5 opacity-50 shrink-0 text-[#94a3b8]" />
-                  </button>
-                  {copied === e.transactionReference && (
-                    <p className="text-[11px] text-[#4ade80] mt-0.5">✓ Copied to clipboard</p>
-                  )}
-                </div>
-                <div className="shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-start pt-1.5 sm:pt-0 border-t sm:border-t-0 border-[#22314d]">
-                  <p className="text-[10px] uppercase tracking-wide font-bold text-[#94a3b8] sm:mb-1">Amount</p>
-                  <div className="text-right">
-                    <p className="font-bold text-sm tabular-nums text-[#f1f5f9]">₹{Number(e.amount).toLocaleString('en-IN')}</p>
-                    {e.payerName && <p className="text-xs text-[#94a3b8] mt-0.5">{e.payerName}</p>}
-                  </div>
-                </div>
-              </div>
-
-              {/* Screenshot */}
-              {e.evidence?.url && (
-                <div className="mt-2.5 sm:mt-3 border border-[#22314d] bg-[#070a13] rounded-sm overflow-hidden">
-                  <div className="flex items-center justify-between px-2.5 sm:px-3 py-1.5 border-b border-[#22314d] bg-[#131b2e]">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#94a3b8] flex items-center gap-1">
-                      <ImageIcon className="w-3 h-3 shrink-0 text-[#38bdf8]" /> UPI Screenshot
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => onViewScreenshot(e.evidence.url)}
-                        className="text-[10px] flex items-center gap-1 text-[#ff2a4b] font-bold hover:underline cursor-pointer">
-                        <ZoomIn className="w-3 h-3" /> View full
-                      </button>
+          {entries.map((e: any, i: number) => {
+            const entryImg = e.evidence?.url || resolvedEvidence;
+            const entryDrive = getDriveInfo(entryImg);
+            return (
+              <div key={i} className="border-2 border-[#22314d] bg-[#0d1322] p-2.5 sm:p-3 rounded-sm space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-[10px] uppercase tracking-wide font-bold text-[#94a3b8]">
+                        UTR / Transaction Reference {entries.length > 1 ? `#${i + 1}` : ''}
+                      </p>
+                      {copied === e.transactionReference && (
+                        <p className="text-[11px] text-[#4ade80] font-bold">✓ Copied to clipboard</p>
+                      )}
+                    </div>
+                    <div className="bg-[#070a13] border border-[#22314d] p-1.5 sm:p-2 rounded-xs flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs sm:text-sm font-bold text-[#38bdf8] select-all break-all tracking-wider">
+                        {e.transactionReference || '—'}
+                      </span>
+                      {e.transactionReference && (
+                        <button
+                          type="button"
+                          onClick={() => copy(e.transactionReference)}
+                          className="px-2.5 py-1 bg-[#131b2e] hover:bg-[#1a253c] text-[#38bdf8] border border-[#22314d] text-xs font-bold rounded-xs flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>{copied === e.transactionReference ? 'COPIED' : 'COPY'}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className="p-2 cursor-pointer bg-[#070a13]" onClick={() => onViewScreenshot(e.evidence.url)}>
-                    <img
-                      src={e.evidence.url}
-                      alt="UPI screenshot"
-                      className="w-full max-h-48 object-contain object-center hover:opacity-90 transition-opacity"
-                    />
+                  <div className="shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-start pt-1.5 sm:pt-0 border-t sm:border-t-0 border-[#22314d]">
+                    <p className="text-[10px] uppercase tracking-wide font-bold text-[#94a3b8] sm:mb-1">Amount</p>
+                    <div className="text-right">
+                      <p className="font-bold text-sm tabular-nums text-[#f1f5f9]">₹{Number(e.amount).toLocaleString('en-IN')}</p>
+                      {e.payerName && <p className="text-xs text-[#94a3b8] mt-0.5">{e.payerName}</p>}
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* Screenshot (Guaranteed Visible) */}
+                {entryImg && (
+                  <div className="mt-2.5 sm:mt-3 border border-[#22314d] bg-[#070a13] rounded-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-2.5 sm:px-3 py-1.5 border-b border-[#22314d] bg-[#131b2e]">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-[#94a3b8] flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3 shrink-0 text-[#38bdf8]" /> UPI Screenshot
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onViewScreenshot(entryImg, 'UPI PAYMENT SCREENSHOT', `UTR: ${e.transactionReference || 'N/A'}`)}
+                          className="text-[10px] flex items-center gap-1 text-[#ff2a4b] font-bold hover:underline cursor-pointer"
+                        >
+                          <ZoomIn className="w-3 h-3" /> View full
+                        </button>
+                        <a
+                          href={entryDrive.openUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-[#94a3b8] hover:text-white flex items-center gap-0.5"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                    <div
+                      className="p-2 cursor-pointer bg-[#070a13] flex items-center justify-center max-h-52 overflow-hidden"
+                      onClick={() => onViewScreenshot(entryImg, 'UPI PAYMENT SCREENSHOT', `UTR: ${e.transactionReference || 'N/A'}`)}
+                    >
+                      <img
+                        src={entryDrive.isDrive ? entryDrive.thumbUrl : entryImg}
+                        alt="UPI screenshot"
+                        className="max-h-48 w-auto object-contain hover:opacity-90 transition-opacity rounded-xs"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Fallback: top-level UTR/evidence (no entries array) */}
-      {entries.length === 0 && (topUTR || topEvidence) && (
-        <div className="border-2 border-[#22314d] bg-[#0d1322] p-2.5 sm:p-3 rounded-sm">
+      {/* Fallback: top-level UTR/evidence (when entries are empty) */}
+      {entries.length === 0 && (topUTR || resolvedEvidence) && (
+        <div className="border-2 border-[#22314d] bg-[#0d1322] p-2.5 sm:p-3 rounded-sm space-y-2">
           {topUTR && (
-            <div className="mb-3">
-              <p className="text-[10px] uppercase tracking-wide font-bold text-[#94a3b8] mb-1">UTR / Transaction Reference</p>
-              <button
-                onClick={() => copy(topUTR)}
-                className="font-mono text-xs sm:text-sm bg-[#131b2e] border border-[#22314d] text-[#f1f5f9] px-3 py-1.5 hover:bg-[#1a253c] flex items-center gap-2 transition-colors w-full text-left cursor-pointer"
-              >
-                <span className="flex-1 truncate">{topUTR}</span>
-                <Copy className="w-3.5 h-3.5 opacity-50 shrink-0 text-[#94a3b8]" />
-              </button>
-              {copied === topUTR && (
-                <p className="text-[11px] text-[#4ade80] mt-0.5">✓ Copied to clipboard</p>
-              )}
+            <div className="mb-2">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] uppercase tracking-wide font-bold text-[#94a3b8]">UTR / Transaction Reference</p>
+                {copied === topUTR && <p className="text-[11px] text-[#4ade80] font-bold">✓ Copied to clipboard</p>}
+              </div>
+              <div className="bg-[#070a13] border border-[#22314d] p-1.5 sm:p-2 rounded-xs flex items-center justify-between gap-2">
+                <span className="font-mono text-xs sm:text-sm font-bold text-[#38bdf8] select-all break-all tracking-wider">
+                  {topUTR}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => copy(topUTR)}
+                  className="px-2.5 py-1 bg-[#131b2e] hover:bg-[#1a253c] text-[#38bdf8] border border-[#22314d] text-xs font-bold rounded-xs flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>{copied === topUTR ? 'COPIED' : 'COPY'}</span>
+                </button>
+              </div>
             </div>
           )}
-          {topEvidence && (
+          {resolvedEvidence && (
             <div className="border border-[#22314d] bg-[#070a13] rounded-sm overflow-hidden">
               <div className="flex items-center justify-between px-2.5 sm:px-3 py-1.5 border-b border-[#22314d] bg-[#131b2e]">
                 <span className="text-[10px] font-bold uppercase tracking-wide text-[#94a3b8] flex items-center gap-1">
                   <ImageIcon className="w-3 h-3 shrink-0 text-[#38bdf8]" /> UPI Screenshot
                 </span>
-                <button onClick={() => onViewScreenshot(topEvidence)}
-                  className="text-[10px] flex items-center gap-1 text-[#ff2a4b] font-bold hover:underline cursor-pointer">
-                  <ZoomIn className="w-3 h-3" /> View full
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onViewScreenshot(resolvedEvidence, 'UPI PAYMENT SCREENSHOT', `UTR: ${topUTR || 'N/A'}`)}
+                    className="text-[10px] flex items-center gap-1 text-[#ff2a4b] font-bold hover:underline cursor-pointer"
+                  >
+                    <ZoomIn className="w-3 h-3" /> View full
+                  </button>
+                  <a
+                    href={getDriveInfo(resolvedEvidence).openUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] text-[#94a3b8] hover:text-white"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
               </div>
-              <div className="p-2 cursor-pointer bg-[#070a13]" onClick={() => onViewScreenshot(topEvidence)}>
+              <div
+                className="p-2 cursor-pointer bg-[#070a13] flex items-center justify-center max-h-52 overflow-hidden"
+                onClick={() => onViewScreenshot(resolvedEvidence, 'UPI PAYMENT SCREENSHOT', `UTR: ${topUTR || 'N/A'}`)}
+              >
                 <img
-                  src={topEvidence}
+                  src={getDriveInfo(resolvedEvidence).isDrive ? getDriveInfo(resolvedEvidence).thumbUrl : resolvedEvidence}
                   alt="UPI screenshot"
-                  className="w-full max-h-48 object-contain object-center hover:opacity-90 transition-opacity"
+                  className="max-h-48 w-auto object-contain hover:opacity-90 transition-opacity rounded-xs"
                 />
               </div>
             </div>
@@ -260,7 +463,7 @@ function PaymentEvidencePanel({ payment, onViewScreenshot }: { payment: any; onV
         </div>
       )}
 
-      {entries.length === 0 && !topUTR && !topEvidence && (
+      {entries.length === 0 && !topUTR && !resolvedEvidence && (
         <p className="text-sm text-[#94a3b8] italic">No payment submission yet.</p>
       )}
 
@@ -293,25 +496,22 @@ function AwaitingCard({
   p,
   busyId,
   onConfirm,
-  onReject
+  onReject,
+  onViewScreenshot
 }: {
   p: any;
   busyId: string | null;
   onConfirm: (p: any) => void;
   onReject: (p: any) => void;
+  onViewScreenshot: (url: string, title?: string, subtitle?: string) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [activeTab, setActiveTab] = useState<'payment' | 'roster'>('payment');
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
 
   const busy = busyId === p.paymentId;
 
   return (
-    <>
-      {screenshotUrl && (
-        <ScreenshotModal url={screenshotUrl} onClose={() => setScreenshotUrl(null)} />
-      )}
-      <div className="border-2 border-[#22314d] bg-[#0d1322] border-l-4 sm:border-l-8 border-l-[#f59e0b] shadow-[3px_3px_0_0_#04060a] overflow-hidden">
+    <div className="border-2 border-[#22314d] bg-[#0d1322] border-l-4 sm:border-l-8 border-l-[#f59e0b] shadow-[3px_3px_0_0_#04060a] overflow-hidden">
         {/* Header */}
         <div className="p-3 sm:p-4">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-start justify-between">
@@ -408,21 +608,26 @@ function AwaitingCard({
 
             <div className="p-3 sm:p-4 bg-[#0d1322]">
               {activeTab === 'payment' && (
-                <PaymentEvidencePanel payment={p} onViewScreenshot={setScreenshotUrl} />
+                <PaymentEvidencePanel payment={p} onViewScreenshot={onViewScreenshot} />
               )}
               {activeTab === 'roster' && (
-                <RosterPanel payment={p} />
+                <RosterPanel payment={p} onViewScreenshot={onViewScreenshot} />
               )}
             </div>
           </div>
         )}
       </div>
-    </>
   );
 }
 
 /* ────────────── compact card (CONFIRMED / REJECTED / ALL views) ────────────── */
-function CompactCard({ p, onViewScreenshot }: { p: any; onViewScreenshot: (url: string) => void }) {
+function CompactCard({
+  p,
+  onViewScreenshot
+}: {
+  p: any;
+  onViewScreenshot: (url: string, title?: string, subtitle?: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'payment' | 'roster'>('payment');
 
@@ -499,7 +704,7 @@ function CompactCard({ p, onViewScreenshot }: { p: any; onViewScreenshot: (url: 
               <PaymentEvidencePanel payment={p} onViewScreenshot={onViewScreenshot} />
             )}
             {activeTab === 'roster' && (
-              <RosterPanel payment={p} />
+              <RosterPanel payment={p} onViewScreenshot={onViewScreenshot} />
             )}
           </div>
         </div>
@@ -528,8 +733,8 @@ export function PaymentDeskPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [lastSynced, setLastSynced]     = useState<Date | null>(null);
 
-  // Global screenshot modal (for compact cards)
-  const [globalScreenshot, setGlobalScreenshot] = useState<string | null>(null);
+  // Global preview modal (supports both UPI screenshots and College ID cards)
+  const [previewModal, setPreviewModal] = useState<{ url: string; title?: string; subtitle?: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -679,9 +884,14 @@ export function PaymentDeskPage() {
   /* ── main desk ── */
   return (
     <div className="mb-24">
-      {/* Global screenshot modal */}
-      {globalScreenshot && (
-        <ScreenshotModal url={globalScreenshot} onClose={() => setGlobalScreenshot(null)} />
+      {/* Global screenshot / ID modal */}
+      {previewModal && (
+        <ScreenshotModal
+          url={previewModal.url}
+          title={previewModal.title}
+          subtitle={previewModal.subtitle}
+          onClose={() => setPreviewModal(null)}
+        />
       )}
 
       {/* Reject dialog */}
@@ -818,13 +1028,14 @@ export function PaymentDeskPage() {
                   busyId={busyId}
                   onConfirm={confirm}
                   onReject={r => { setRejecting(r); setRejectReason(''); }}
+                  onViewScreenshot={(url, title, subtitle) => setPreviewModal({ url, title, subtitle })}
                 />
               ))
             : visible.map(p => (
                 <CompactCard
                   key={p.paymentId}
                   p={p}
-                  onViewScreenshot={setGlobalScreenshot}
+                  onViewScreenshot={(url, title, subtitle) => setPreviewModal({ url, title, subtitle })}
                 />
               ))
           }

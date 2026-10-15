@@ -203,7 +203,8 @@ export const RegistrationStatusPage: React.FC<RegistrationStatusPageProps> = ({ 
           fileType: file.type,
           dataUrl,
           ownerName: utrPayer.trim() || registration.leaderName || 'Payment proof',
-          registrationId: registration.registrationId
+          registrationId: registration.registrationId,
+          documentType: 'PAYMENT_PROOF'
         });
         setUtrProof(res.url);
       } catch {

@@ -341,7 +341,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({ onSuccess })
           fileType: file.type,
           dataUrl,
           ownerName: payerName.trim() || 'Payment proof',
-          registrationId: createdRegistration?.registrationId || ''
+          registrationId: createdRegistration?.registrationId || '',
+          documentType: 'PAYMENT_PROOF'
         });
         setUtrProofUrl(res.url);
         setProofName(file.name);

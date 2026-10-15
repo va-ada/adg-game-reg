@@ -73,12 +73,39 @@ export const AdminPage: React.FC = () => {
   // Selected Registration detail modal
   const [selectedReg, setSelectedReg] = useState<any | null>(null);
   const [selectedRegPayment, setSelectedRegPayment] = useState<any | null>(null);
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const [previewModal, setPreviewModal] = useState<{
+    url: string;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
   const [copiedUTR, setCopiedUTR] = useState(false);
 
   // Rejection modal (kept for compat, but primary desk is the dedicated page)
   const [rejectModalPayment, setRejectModalPayment] = useState<any | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  const getDriveInfo = (url: string | null | undefined) => {
+    if (!url || typeof url !== 'string') {
+      return { isDrive: false, previewUrl: '', thumbUrl: '', openUrl: '' };
+    }
+    const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]+)/;
+    const match = url.match(driveRegex);
+    if (match && match[1]) {
+      const fileId = match[1];
+      return {
+        isDrive: true,
+        previewUrl: `https://drive.google.com/file/d/${fileId}/preview`,
+        thumbUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w600`,
+        openUrl: `https://drive.google.com/file/d/${fileId}/view`
+      };
+    }
+    return {
+      isDrive: false,
+      previewUrl: url,
+      thumbUrl: url,
+      openUrl: url
+    };
+  };
 
   const getExportUrl = (endpoint: string) => {
     return token ? `${endpoint}?token=${encodeURIComponent(token)}` : endpoint;
@@ -130,7 +157,7 @@ export const AdminPage: React.FC = () => {
     try {
       fetchAdminDashboard().then(setDashboardData).catch(() => {});
 
-      if (activeTab === 'registrations') {
+      if (activeTab === 'registrations' || activeTab === 'verification') {
         // Load both registrations and payments so we can join them
         const [regs, pays] = await Promise.all([
           fetchAdminRegistrations({ search: regSearch, teamSize: regSizeFilter }),
@@ -165,8 +192,34 @@ export const AdminPage: React.FC = () => {
     return { label: 'PENDING', color: '#92400e', bg: '#fef3c7' };
   };
 
+  const fallbackCopyText = (text: string) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+    } catch {}
+    document.body.removeChild(ta);
+  };
+
   const copyToClipboard = (text: string) => {
-    navigator.clipboard?.writeText(text);
+    if (!text) return;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {
+          fallbackCopyText(text);
+        });
+      } else {
+        fallbackCopyText(text);
+      }
+    } catch {
+      fallbackCopyText(text);
+    }
     setCopiedUTR(true);
     setTimeout(() => setCopiedUTR(false), 1800);
   };
@@ -552,6 +605,7 @@ export const AdminPage: React.FC = () => {
                   <th className="p-3">Size</th>
                   <th className="p-3">Leader</th>
                   <th className="p-3">Payment Status</th>
+                  <th className="p-3">Proof / UTR</th>
                   <th className="p-3">Date</th>
                   <th className="p-3 text-right">Details</th>
                 </tr>
@@ -559,7 +613,7 @@ export const AdminPage: React.FC = () => {
               <tbody className="divide-y divide-[#111827]">
                 {filteredRegistrations.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center font-arcade text-xs text-[#111827]/40">
+                    <td colSpan={8} className="p-8 text-center font-arcade text-xs text-[#111827]/40">
                       NO REGISTRATIONS MATCH YOUR FILTER
                     </td>
                   </tr>
@@ -567,6 +621,9 @@ export const AdminPage: React.FC = () => {
                 {filteredRegistrations.map((reg) => {
                   const pay = payments.find(p => p.registrationId === reg.registrationId);
                   const { label: payLabel, color: payColor, bg: payBg } = getPaymentLabel(pay);
+                  const proofUrl = pay?.evidence?.url || pay?.entries?.[0]?.evidence?.url || reg.paymentEvidence;
+                  const utr = pay?.transactionReference || pay?.entries?.[0]?.transactionReference || reg.transactionReference;
+
                   return (
                     <tr key={reg.registrationId} className="hover:bg-[#F7E8B5]/50">
                       <td className="p-3 font-mono font-bold text-[#E5005A] whitespace-nowrap">
@@ -586,6 +643,36 @@ export const AdminPage: React.FC = () => {
                           {payLabel}
                         </span>
                       </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          {proofUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModal({
+                                url: proofUrl,
+                                title: `UPI PAYMENT SCREENSHOT - ${reg.teamName}`,
+                                subtitle: `${reg.registrationId} · Leader: ${reg.leaderName}`
+                              })}
+                              className="px-2 py-1 bg-[#111827] text-white hover:bg-[#E5005A] text-[10px] font-arcade flex items-center gap-1 border border-[#111827] shadow-[1px_1px_0_0_#000] cursor-pointer"
+                              title="Click to preview payment screenshot"
+                            >
+                              <ImageIcon className="w-3 h-3 text-[#38bdf8]" /> PROOF
+                            </button>
+                          ) : (
+                            <span className="text-gray-400 font-mono text-[10px]">No proof</span>
+                          )}
+                          {utr && (
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(utr)}
+                              className="font-mono text-[10px] font-bold text-[#111827] bg-[#F7E8B5] px-1.5 py-0.5 border border-[#111827]/40 hover:bg-white truncate max-w-[110px] cursor-pointer"
+                              title={`Click to copy UTR: ${utr}`}
+                            >
+                              {utr}
+                            </button>
+                          )}
+                        </div>
+                      </td>
                       <td className="p-3 text-gray-500 text-[11px] whitespace-nowrap">
                         {new Date(reg.createdAt).toLocaleDateString('en-IN')}
                       </td>
@@ -596,7 +683,7 @@ export const AdminPage: React.FC = () => {
                             setSelectedRegPayment(pay || null);
                             setCopiedUTR(false);
                           }}
-                          className="px-2.5 py-1.5 bg-[#00AFC6] text-[#111827] border-2 border-[#111827] font-arcade text-[10px] hover:bg-white flex items-center gap-1 ml-auto"
+                          className="px-2.5 py-1.5 bg-[#00AFC6] text-[#111827] border-2 border-[#111827] font-arcade text-[10px] hover:bg-white flex items-center gap-1 ml-auto cursor-pointer"
                         >
                           <Eye className="w-3 h-3" /> VIEW
                         </button>
@@ -656,6 +743,253 @@ export const AdminPage: React.FC = () => {
               <p className="font-pixel text-2xl text-[#dc2626]">{dashboardData?.rejectedRegistrations ?? '…'}</p>
               <p className="text-[10px] font-arcade text-[#111827]/50 mt-1">REJECTED</p>
             </div>
+          </div>
+
+          {/* Pending verification queue right here in organizer portal */}
+          <div className="bg-[#FFFDF0] border-3 border-[#111827] p-5 shadow-[4px_4px_0_0_#111827] space-y-4">
+            <div className="flex items-center justify-between border-b-2 border-[#111827] pb-3">
+              <div>
+                <h3 className="font-pixel text-base text-[#111827]">
+                  PENDING REVIEW QUEUE ({pendingPayments.length} SQUADS)
+                </h3>
+                <p className="text-xs font-body text-gray-600">
+                  Inspect UPI screenshots, verify UTR, review squad roster ID cards, and approve passes directly.
+                </p>
+              </div>
+              <button
+                onClick={loadAllAdminData}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111827] text-white font-arcade text-xs border border-[#111827] hover:bg-gray-800 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> REFRESH
+              </button>
+            </div>
+
+            {pendingPayments.length === 0 ? (
+              <div className="p-8 text-center bg-[#F7E8B5]/40 border-2 border-dashed border-[#111827]/30">
+                <p className="font-arcade text-sm text-[#111827]/70">NO PAYMENTS CURRENTLY AWAITING VERIFICATION</p>
+                <p className="text-xs text-[#111827]/50 mt-1">All submitted UPI proofs have been verified or rejected.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingPayments.map((p) => {
+                  const proofUrl = p.evidence?.url || p.entries?.[0]?.evidence?.url;
+                  const utr = p.transactionReference || p.entries?.[0]?.transactionReference;
+                  const drive = getDriveInfo(proofUrl);
+                  const roster = p.roster || [];
+
+                  return (
+                    <div
+                      key={p.paymentId || p.registrationId}
+                      className="border-3 border-[#111827] bg-[#FFFDF0] shadow-[3px_3px_0_0_#111827] p-4 space-y-4"
+                    >
+                      {/* Squad header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#111827]/20 pb-3">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-pixel text-sm text-[#111827]">{p.teamName || 'Unknown Team'}</span>
+                            <span className="font-mono text-xs font-bold text-[#E5005A] bg-[#E5005A]/10 px-2 py-0.5 border border-[#E5005A]/30">
+                              {p.registrationId}
+                            </span>
+                            <span className="font-arcade text-[10px] bg-[#fbbf24]/20 border border-[#fbbf24] text-[#b45309] font-bold px-2 py-0.5">
+                              AWAITING REVIEW
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-600 mt-1 flex-wrap">
+                            <span>Leader: <strong>{p.leaderName}</strong></span>
+                            <span>Email: <strong className="font-mono">{p.contactEmail}</strong></span>
+                            {p.contactMobile && <span>Mobile: <strong className="font-mono">{p.contactMobile}</strong></span>}
+                          </div>
+                        </div>
+
+                        {/* Direct Action buttons */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleVerifyPayment(p.paymentId)}
+                            className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white font-arcade text-xs border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] flex items-center gap-1.5 cursor-pointer font-bold transition-all"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> APPROVE
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRejectModalPayment(p);
+                              setRejectReason('');
+                            }}
+                            className="px-3.5 py-2 bg-[#dc2626] hover:bg-[#b91c1c] text-white font-arcade text-xs border-2 border-[#111827] shadow-[2px_2px_0_0_#111827] flex items-center gap-1 cursor-pointer font-bold transition-all"
+                          >
+                            <X className="w-3.5 h-3.5" /> REJECT
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Payment Evidence & Roster Grid */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Evidence column */}
+                        <div className="bg-[#0f172a] border-2 border-[#1e293b] p-3.5 text-white space-y-3 rounded-xs">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">
+                            PAYMENT EVIDENCE &amp; UTR
+                          </p>
+
+                          {/* UTR High-Contrast box */}
+                          <div className="bg-[#020617] border border-[#334155] p-2.5 rounded-xs space-y-1.5">
+                            <span className="text-[10px] font-bold text-[#94a3b8] uppercase block">
+                              UTR Reference
+                            </span>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <span className="font-mono text-sm sm:text-base font-bold text-[#38bdf8] select-all break-all tracking-wider">
+                                {utr || '—'}
+                              </span>
+                              {utr && (
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(utr)}
+                                  className="px-2.5 py-1 bg-[#38bdf8]/15 hover:bg-[#38bdf8] text-[#38bdf8] hover:text-[#020617] border border-[#38bdf8]/40 font-arcade text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                                >
+                                  {copiedUTR ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                  {copiedUTR ? 'COPIED!' : 'COPY'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs pt-1 text-gray-300">
+                            <span>Amount: <strong className="text-[#facc15] font-mono text-sm">₹{Number(p.amountExpected || p.amount || 500).toLocaleString('en-IN')}</strong></span>
+                            <span>Paid: <strong className="text-[#4ade80] font-mono text-sm">₹{Number(p.amountPaid || p.amount || 0).toLocaleString('en-IN')}</strong></span>
+                          </div>
+
+                          {/* Screenshot preview */}
+                          {proofUrl ? (
+                            <div className="border border-[#334155] bg-[#020617] p-2 rounded-xs space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-[#94a3b8] flex items-center gap-1 uppercase">
+                                  <ImageIcon className="w-3 h-3 text-[#38bdf8]" /> UPI Screenshot
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setPreviewModal({
+                                      url: proofUrl,
+                                      title: `UPI Payment Proof - ${p.teamName}`,
+                                      subtitle: `UTR: ${utr || 'N/A'} · ${p.registrationId}`
+                                    })}
+                                    className="text-[10px] text-[#38bdf8] hover:text-white font-bold flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <ZoomIn className="w-3 h-3" /> View Full
+                                  </button>
+                                  <a
+                                    href={drive.openUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[10px] text-gray-400 hover:text-white flex items-center gap-0.5"
+                                  >
+                                    <ExternalLink className="w-3 h-3" /> Tab
+                                  </a>
+                                </div>
+                              </div>
+                              <div
+                                onClick={() => setPreviewModal({
+                                  url: proofUrl,
+                                  title: `UPI Payment Proof - ${p.teamName}`,
+                                  subtitle: `UTR: ${utr || 'N/A'} · ${p.registrationId}`
+                                })}
+                                className="cursor-pointer bg-[#0b1329] border border-[#1e293b] rounded-xs flex items-center justify-center p-1 hover:opacity-90 max-h-48 overflow-hidden"
+                              >
+                                <img
+                                  src={drive.isDrive ? drive.thumbUrl : proofUrl}
+                                  alt="UPI Proof"
+                                  className="max-h-44 w-auto object-contain rounded-xs"
+                                  onError={(e) => {
+                                    if (drive.isDrive && e.currentTarget.src !== drive.openUrl) {
+                                      e.currentTarget.style.display = 'none';
+                                      const par = e.currentTarget.parentElement;
+                                      if (par && !par.querySelector('.drive-fb')) {
+                                        const fb = document.createElement('div');
+                                        fb.className = 'drive-fb text-xs text-[#38bdf8] p-4 text-center font-mono';
+                                        fb.innerHTML = '📄 Google Drive Screenshot<br/><span style="font-size:10px;color:#94a3b8">Click to view full preview</span>';
+                                        par.appendChild(fb);
+                                      }
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400 italic py-2">No payment screenshot attached.</p>
+                          )}
+                        </div>
+
+                        {/* Roster column with player cards and ID Card previews */}
+                        <div className="bg-[#FFFDF0] border-2 border-[#111827] p-3.5 space-y-2">
+                          <div className="flex items-center justify-between border-b border-[#111827]/20 pb-1.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#111827]/60">
+                              SQUAD ROSTER ({roster.length} PLAYERS)
+                            </span>
+                            <span className="text-[10px] text-[#E5005A] font-bold">1st Member is Leader</span>
+                          </div>
+
+                          {roster.length === 0 ? (
+                            <p className="text-xs text-gray-500 italic py-2">No roster data loaded.</p>
+                          ) : (
+                            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                              {roster.map((m: any, idx: number) => {
+                                const isLeader = idx === 0;
+                                const idDrive = getDriveInfo(m.idCardUrl);
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`p-2 border rounded-xs flex items-center justify-between gap-2 text-xs ${
+                                      isLeader
+                                        ? 'bg-[#E5005A]/10 border-[#E5005A]'
+                                        : 'bg-[#F7E8B5]/40 border-[#111827]/20'
+                                    }`}
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-bold truncate text-[#111827]">{m.fullName || m.name}</span>
+                                        {isLeader && (
+                                          <span className="text-[9px] font-pixel bg-[#E5005A] text-white px-1 py-0.2 shrink-0">
+                                            LEADER
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[10px] text-gray-600 truncate">
+                                        {m.studentId} · {m.branch} · {m.college || 'SFIT'}
+                                      </p>
+                                    </div>
+
+                                    {/* ID Card preview thumbnail */}
+                                    <div className="shrink-0 flex items-center gap-1.5">
+                                      {m.idCardUrl ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => setPreviewModal({
+                                            url: m.idCardUrl,
+                                            title: `College ID Card - ${m.fullName || m.name}`,
+                                            subtitle: `${m.studentId} · ${m.college || 'SFIT'}`
+                                          })}
+                                          className="flex items-center gap-1 bg-[#111827] hover:bg-[#00AFC6] text-white text-[10px] font-arcade px-2 py-1 border border-[#111827] shadow-[1px_1px_0_0_#000] cursor-pointer"
+                                          title="Click to preview College ID Card"
+                                        >
+                                          <Eye className="w-3 h-3 text-[#38bdf8]" /> ID CARD
+                                        </button>
+                                      ) : (
+                                        <span className="text-[9px] text-gray-400 font-mono">No ID</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -732,14 +1066,47 @@ export const AdminPage: React.FC = () => {
                       <td className="p-3">{st.branch} • {st.year}</td>
                       <td className="p-3">
                         {st.idCardUrl ? (
-                          <a
-                            href={st.idCardUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 bg-[#2E7D32] text-white font-pixel text-[10px] px-2 py-1 border border-[#111827] hover:bg-[#111827]"
-                          >
-                            <Eye className="w-3 h-3" /> VIEW ID
-                          </a>
+                          <div className="flex items-center gap-2">
+                            <div
+                              onClick={() => setPreviewModal({
+                                url: st.idCardUrl,
+                                title: `COLLEGE ID CARD - ${st.fullName}`,
+                                subtitle: `${st.studentId} · ${st.college || 'SFIT'} · ${st.branch}`
+                              })}
+                              className="w-12 h-9 border border-[#111827] bg-[#111827]/10 rounded-xs overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#E5005A] shrink-0 flex items-center justify-center shadow-[1px_1px_0_0_#111827]"
+                              title="Click to preview College ID Card"
+                            >
+                              <img
+                                src={getDriveInfo(st.idCardUrl).isDrive ? getDriveInfo(st.idCardUrl).thumbUrl : st.idCardUrl}
+                                alt="ID Card"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewModal({
+                                  url: st.idCardUrl,
+                                  title: `COLLEGE ID CARD - ${st.fullName}`,
+                                  subtitle: `${st.studentId} · ${st.college || 'SFIT'} · ${st.branch}`
+                                })}
+                                className="inline-flex items-center gap-1 bg-[#111827] hover:bg-[#E5005A] text-white font-arcade text-[10px] px-2 py-0.5 border border-[#111827] cursor-pointer shadow-[1px_1px_0_0_#000]"
+                              >
+                                <Eye className="w-3 h-3 text-[#38bdf8]" /> PREVIEW
+                              </button>
+                              <a
+                                href={getDriveInfo(st.idCardUrl).openUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[9px] text-[#00AFC6] font-mono hover:underline flex items-center gap-0.5"
+                              >
+                                <ExternalLink className="w-2.5 h-2.5" /> Full Tab
+                              </a>
+                            </div>
+                          </div>
                         ) : (
                           <span className="text-[#E5005A] font-pixel text-[10px]">PENDING</span>
                         )}
@@ -830,29 +1197,73 @@ export const AdminPage: React.FC = () => {
 
       {/* ---------------------------------------------------- */}
       {/* REGISTRATION DETAIL MODAL */}
-      {/* ---------------------------------------------------- */}
-      {/* Screenshot zoom modal */}
-      {screenshotUrl && (
-        <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-4"
-          onClick={() => setScreenshotUrl(null)}>
-          <div className="bg-white border-4 border-[#111827] shadow-[8px_8px_0_0_#000] max-w-xl w-full"
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3 bg-[#111827] text-white">
-              <span className="font-pixel text-xs">UPI PAYMENT SCREENSHOT</span>
+      {/* ---------------      {/* Universal Image & Document Zoom Modal */}
+      {previewModal && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs"
+          onClick={() => setPreviewModal(null)}
+        >
+          <div
+            className="bg-[#0f172a] border-4 border-[#111827] shadow-[8px_8px_0_0_#000] max-w-2xl w-full text-white overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 bg-[#111827] border-b-2 border-[#1e293b]">
+              <div>
+                <span className="font-pixel text-xs text-[#38bdf8] block">{previewModal.title}</span>
+                {previewModal.subtitle && (
+                  <span className="text-[11px] font-mono text-gray-400">{previewModal.subtitle}</span>
+                )}
+              </div>
               <div className="flex items-center gap-2">
-                <a href={screenshotUrl} target="_blank" rel="noreferrer"
-                  className="text-xs flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2 py-1">
-                  <ExternalLink className="w-3 h-3" /> Open original
+                <a
+                  href={getDriveInfo(previewModal.url).openUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs flex items-center gap-1 bg-white/10 hover:bg-white/20 text-[#f1f5f9] px-2.5 py-1 transition-colors border border-white/20"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Open original
                 </a>
-                <button onClick={() => setScreenshotUrl(null)}
-                  className="w-6 h-6 flex items-center justify-center bg-white/10 hover:bg-[#E5005A]">
+                <button
+                  onClick={() => setPreviewModal(null)}
+                  className="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-[#E5005A] text-white transition-colors cursor-pointer"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
-            <div className="p-2 max-h-[78vh] overflow-auto bg-[#f3f4f6] flex items-center justify-center">
-              <img src={screenshotUrl} alt="UPI screenshot"
-                className="max-w-full h-auto object-contain" style={{ maxHeight: '70vh' }} />
+
+            <div className="p-3 max-h-[78vh] overflow-auto bg-[#020617] flex items-center justify-center">
+              {getDriveInfo(previewModal.url).isDrive ? (
+                <div className="w-full flex flex-col items-center gap-2">
+                  <iframe
+                    src={getDriveInfo(previewModal.url).previewUrl}
+                    className="w-full h-[65vh] border-0 rounded-xs bg-[#0f172a]"
+                    title={previewModal.title}
+                    allow="autoplay"
+                  />
+                  <a
+                    href={getDriveInfo(previewModal.url).openUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-arcade text-[#38bdf8] hover:underline flex items-center gap-1 mt-1"
+                  >
+                    <ExternalLink className="w-3 h-3" /> Can't see the preview? Open in Google Drive
+                  </a>
+                </div>
+              ) : (
+                <img
+                  src={previewModal.url}
+                  alt={previewModal.title}
+                  className="max-w-full h-auto object-contain rounded-xs"
+                  style={{ maxHeight: '70vh' }}
+                  onError={(e) => {
+                    const d = getDriveInfo(previewModal.url);
+                    if (d.openUrl && e.currentTarget.src !== d.thumbUrl) {
+                      e.currentTarget.src = d.thumbUrl;
+                    }
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -872,7 +1283,7 @@ export const AdminPage: React.FC = () => {
                 </h3>
               </div>
               <button onClick={() => setSelectedReg(null)}
-                className="p-1.5 border-2 border-white/30 bg-white/10 hover:bg-[#E5005A]">
+                className="p-1.5 border-2 border-white/30 bg-white/10 hover:bg-[#E5005A] cursor-pointer">
                 <X className="w-4 h-4 text-white" />
               </button>
             </div>
@@ -882,12 +1293,12 @@ export const AdminPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-[#F7E8B5] border-2 border-[#111827] p-4 space-y-1.5">
                   <p className="font-arcade text-[10px] font-bold text-[#111827]/50 mb-2">TEAM LEADER</p>
-                  <p className="font-bold text-sm">{selectedReg.leaderName}</p>
-                  <p className="font-mono text-[11px] text-[#111827]/60">{selectedReg.contactEmail}</p>
+                  <p className="font-bold text-sm text-[#111827]">{selectedReg.leaderName}</p>
+                  <p className="font-mono text-[11px] text-[#111827]/70">{selectedReg.contactEmail}</p>
                   {selectedReg.contactMobile && (
-                    <p className="font-mono text-[11px] text-[#111827]/60">{selectedReg.contactMobile}</p>
+                    <p className="font-mono text-[11px] text-[#111827]/70">{selectedReg.contactMobile}</p>
                   )}
-                  <p className="text-[11px] text-[#111827]/50 mt-1">Team size: {selectedReg.teamSize || 5} players</p>
+                  <p className="text-[11px] text-[#111827]/60 mt-1">Team size: {selectedReg.teamSize || 5} players</p>
                 </div>
                 <div className="bg-[#F7E8B5] border-2 border-[#111827] p-4 space-y-2">
                   <p className="font-arcade text-[10px] font-bold text-[#111827]/50 mb-2">PAYMENT STATUS</p>
@@ -902,10 +1313,10 @@ export const AdminPage: React.FC = () => {
                           </span>
                         );
                       })()}
-                      <p className="text-[11px]"><strong>Amount:</strong> ₹{Number(selectedRegPayment.amountExpected || selectedRegPayment.amount).toLocaleString('en-IN')}</p>
-                      <p className="text-[11px]"><strong>Method:</strong> {selectedRegPayment.method || 'UPI'}</p>
+                      <p className="text-[11px] text-[#111827]"><strong>Amount:</strong> ₹{Number(selectedRegPayment.amountExpected || selectedRegPayment.amount).toLocaleString('en-IN')}</p>
+                      <p className="text-[11px] text-[#111827]"><strong>Method:</strong> {selectedRegPayment.method || 'UPI'}</p>
                       {selectedRegPayment.verifiedAt && (
-                        <p className="text-[11px] text-[#16a34a]">
+                        <p className="text-[11px] text-[#16a34a] font-bold">
                           Approved {new Date(selectedRegPayment.verifiedAt).toLocaleString('en-IN')}
                         </p>
                       )}
@@ -924,87 +1335,169 @@ export const AdminPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Payment evidence: UTR + screenshot */}
+              {/* Payment evidence: UTR + screenshot (Fixed high contrast, fully readable and copyable) */}
               {selectedRegPayment && (
                 <div>
                   <h4 className="font-arcade text-[10px] font-bold text-[#111827] mb-3">PAYMENT EVIDENCE</h4>
-                  <div className="border-2 border-[#111827] bg-white p-4 space-y-3">
+                  <div className="border-2 border-[#111827] bg-[#0f172a] text-[#f1f5f9] p-4 space-y-4 rounded-xs shadow-[2px_2px_0_0_#111827]">
                     {/* UTR from entries or top-level */}
                     {(() => {
                       const entries: any[] = selectedRegPayment.entries || [];
                       const topUTR = selectedRegPayment.transactionReference;
-                      const topImg = selectedRegPayment.evidence?.url;
+                      const topImg = selectedRegPayment.evidence?.url || selectedReg.paymentEvidence;
 
-                      if (entries.length > 0) return entries.map((e: any, i: number) => (
-                        <div key={i} className="space-y-2">
-                          <div>
-                            <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 mb-1">UTR / Transaction Reference</p>
-                            <button
-                              onClick={() => copyToClipboard(e.transactionReference)}
-                              className="font-mono text-xs bg-[#111827]/5 border border-[#111827]/20 px-3 py-2 hover:bg-[#111827]/10 flex items-center gap-2 w-full text-left"
-                            >
-                              <span className="flex-1 truncate">{e.transactionReference || '—'}</span>
-                              <Copy className="w-3.5 h-3.5 opacity-40" />
-                            </button>
-                            {copiedUTR && <p className="text-[10px] text-[#16a34a]">✓ Copied!</p>}
-                          </div>
-                          <p className="text-xs"><strong>Amount:</strong> ₹{Number(e.amount).toLocaleString('en-IN')} {e.payerName ? `· ${e.payerName}` : ''}</p>
-                          {e.evidence?.url && (
-                            <div className="border border-[#111827]/20 overflow-hidden">
-                              <div className="flex items-center justify-between px-3 py-1.5 bg-[#111827]/5 border-b border-[#111827]/10">
-                                <span className="text-[10px] font-bold uppercase tracking-wide text-[#111827]/50 flex items-center gap-1">
-                                  <ImageIcon className="w-3 h-3" /> UPI Screenshot
-                                </span>
-                                <button onClick={() => setScreenshotUrl(e.evidence.url)}
-                                  className="text-[10px] flex items-center gap-1 text-[#E5005A] font-bold hover:underline">
-                                  <ZoomIn className="w-3 h-3" /> View full
-                                </button>
+                      if (entries.length > 0) return entries.map((e: any, i: number) => {
+                        const entryImg = e.evidence?.url || topImg;
+                        const entryDrive = getDriveInfo(entryImg);
+                        return (
+                          <div key={i} className="space-y-3 border-b border-[#1e293b] pb-3 last:border-b-0 last:pb-0">
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-[10px] uppercase tracking-wider font-bold text-[#94a3b8]">
+                                  UTR / Transaction Reference {entries.length > 1 ? `#${i + 1}` : ''}
+                                </p>
+                                {copiedUTR && <span className="text-[10px] font-bold text-[#4ade80]">✓ Copied!</span>}
                               </div>
-                              <div className="p-2 cursor-pointer bg-[#f9fafb]"
-                                onClick={() => setScreenshotUrl(e.evidence.url)}>
-                                <img src={e.evidence.url} alt="UPI screenshot"
-                                  className="w-full max-h-48 object-contain hover:opacity-90 transition-opacity" />
+                              <div className="bg-[#020617] border border-[#334155] p-2.5 rounded-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span className="font-mono text-sm sm:text-base font-bold text-[#38bdf8] select-all break-all tracking-wider">
+                                  {e.transactionReference || '—'}
+                                </span>
+                                {e.transactionReference && (
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(e.transactionReference)}
+                                    className="px-3 py-1.5 bg-[#38bdf8]/15 hover:bg-[#38bdf8] text-[#38bdf8] hover:text-[#020617] border border-[#38bdf8]/40 font-arcade text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                                  >
+                                    {copiedUTR ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                    {copiedUTR ? 'COPIED!' : 'COPY UTR'}
+                                  </button>
+                                )}
                               </div>
                             </div>
-                          )}
-                        </div>
-                      ));
+                            <div className="flex items-center justify-between text-xs text-gray-300">
+                              <span><strong>Amount:</strong> ₹{Number(e.amount).toLocaleString('en-IN')}</span>
+                              {e.payerName && <span><strong>Payer:</strong> {e.payerName}</span>}
+                            </div>
+                            {entryImg && (
+                              <div className="border border-[#334155] bg-[#020617] rounded-xs overflow-hidden">
+                                <div className="flex items-center justify-between px-3 py-1.5 bg-[#111827] border-b border-[#1e293b]">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1">
+                                    <ImageIcon className="w-3 h-3 text-[#38bdf8]" /> UPI Screenshot
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewModal({
+                                        url: entryImg,
+                                        title: `UPI Payment Proof - ${selectedReg.teamName}`,
+                                        subtitle: `UTR: ${e.transactionReference || 'N/A'}`
+                                      })}
+                                      className="text-[10px] flex items-center gap-1 text-[#38bdf8] hover:text-white font-bold cursor-pointer"
+                                    >
+                                      <ZoomIn className="w-3 h-3" /> View full
+                                    </button>
+                                    <a
+                                      href={entryDrive.openUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-[10px] flex items-center gap-1 text-gray-400 hover:text-white"
+                                    >
+                                      <ExternalLink className="w-3 h-3" /> Tab
+                                    </a>
+                                  </div>
+                                </div>
+                                <div
+                                  className="p-2 cursor-pointer bg-[#020617] flex items-center justify-center hover:opacity-90 max-h-52 overflow-hidden"
+                                  onClick={() => setPreviewModal({
+                                    url: entryImg,
+                                    title: `UPI Payment Proof - ${selectedReg.teamName}`,
+                                    subtitle: `UTR: ${e.transactionReference || 'N/A'}`
+                                  })}
+                                >
+                                  <img
+                                    src={entryDrive.isDrive ? entryDrive.thumbUrl : entryImg}
+                                    alt="UPI screenshot"
+                                    className="max-h-48 w-auto object-contain rounded-xs"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
 
+                      const topDrive = getDriveInfo(topImg);
                       return (
                         <>
                           {topUTR && (
                             <div>
-                              <p className="text-[10px] uppercase tracking-wide font-bold text-[#111827]/40 mb-1">UTR / Transaction Reference</p>
-                              <button
-                                onClick={() => copyToClipboard(topUTR)}
-                                className="font-mono text-xs bg-[#111827]/5 border border-[#111827]/20 px-3 py-2 hover:bg-[#111827]/10 flex items-center gap-2 w-full text-left"
-                              >
-                                <span className="flex-1">{topUTR}</span>
-                                <Copy className="w-3.5 h-3.5 opacity-40" />
-                              </button>
-                              {copiedUTR && <p className="text-[10px] text-[#16a34a]">✓ Copied!</p>}
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-[10px] uppercase tracking-wider font-bold text-[#94a3b8]">
+                                  UTR / Transaction Reference
+                                </p>
+                                {copiedUTR && <span className="text-[10px] font-bold text-[#4ade80]">✓ Copied!</span>}
+                              </div>
+                              <div className="bg-[#020617] border border-[#334155] p-2.5 rounded-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span className="font-mono text-sm sm:text-base font-bold text-[#38bdf8] select-all break-all tracking-wider">
+                                  {topUTR}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(topUTR)}
+                                  className="px-3 py-1.5 bg-[#38bdf8]/15 hover:bg-[#38bdf8] text-[#38bdf8] hover:text-[#020617] border border-[#38bdf8]/40 font-arcade text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                                >
+                                  {copiedUTR ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                  {copiedUTR ? 'COPIED!' : 'COPY UTR'}
+                                </button>
+                              </div>
                             </div>
                           )}
                           {topImg && (
-                            <div className="border border-[#111827]/20 overflow-hidden">
-                              <div className="flex items-center justify-between px-3 py-1.5 bg-[#111827]/5 border-b border-[#111827]/10">
-                                <span className="text-[10px] font-bold uppercase tracking-wide text-[#111827]/50 flex items-center gap-1">
-                                  <ImageIcon className="w-3 h-3" /> UPI Screenshot
+                            <div className="border border-[#334155] bg-[#020617] rounded-xs overflow-hidden">
+                              <div className="flex items-center justify-between px-3 py-1.5 bg-[#111827] border-b border-[#1e293b]">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1">
+                                  <ImageIcon className="w-3 h-3 text-[#38bdf8]" /> UPI Screenshot
                                 </span>
-                                <button onClick={() => setScreenshotUrl(topImg)}
-                                  className="text-[10px] flex items-center gap-1 text-[#E5005A] font-bold hover:underline">
-                                  <ZoomIn className="w-3 h-3" /> View full
-                                </button>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setPreviewModal({
+                                      url: topImg,
+                                      title: `UPI Payment Proof - ${selectedReg.teamName}`,
+                                      subtitle: `UTR: ${topUTR || 'N/A'}`
+                                    })}
+                                    className="text-[10px] flex items-center gap-1 text-[#38bdf8] hover:text-white font-bold cursor-pointer"
+                                  >
+                                    <ZoomIn className="w-3 h-3" /> View full
+                                  </button>
+                                  <a
+                                    href={topDrive.openUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[10px] flex items-center gap-1 text-gray-400 hover:text-white"
+                                  >
+                                    <ExternalLink className="w-3 h-3" /> Tab
+                                  </a>
+                                </div>
                               </div>
-                              <div className="p-2 cursor-pointer bg-[#f9fafb]"
-                                onClick={() => setScreenshotUrl(topImg)}>
-                                <img src={topImg} alt="UPI screenshot"
-                                  className="w-full max-h-48 object-contain hover:opacity-90 transition-opacity" />
+                              <div
+                                className="p-2 cursor-pointer bg-[#020617] flex items-center justify-center hover:opacity-90 max-h-52 overflow-hidden"
+                                onClick={() => setPreviewModal({
+                                  url: topImg,
+                                  title: `UPI Payment Proof - ${selectedReg.teamName}`,
+                                  subtitle: `UTR: ${topUTR || 'N/A'}`
+                                })}
+                              >
+                                <img
+                                  src={topDrive.isDrive ? topDrive.thumbUrl : topImg}
+                                  alt="UPI screenshot"
+                                  className="max-h-48 w-auto object-contain rounded-xs"
+                                />
                               </div>
                             </div>
                           )}
                           {!topUTR && !topImg && (
-                            <p className="text-xs text-[#111827]/40 italic">No payment evidence submitted yet.</p>
+                            <p className="text-xs text-gray-400 italic">No payment evidence submitted yet.</p>
                           )}
                         </>
                       );
@@ -1013,48 +1506,109 @@ export const AdminPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Team roster */}
+              {/* Team roster with member ID Card preview thumbnails */}
               <div>
-                <h4 className="font-arcade text-[10px] font-bold text-[#111827] mb-3">SQUAD ROSTER</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-arcade text-[10px] font-bold text-[#111827]">SQUAD ROSTER &amp; COLLEGE ID CARDS</h4>
+                  <span className="text-[10px] text-[#E5005A] font-bold">1st Member is Leader</span>
+                </div>
                 {(() => {
-                  // Use roster from payment (enriched) or players from reg
                   const members: any[] = selectedRegPayment?.roster || selectedReg.players || [];
                   if (members.length === 0) {
                     return <p className="text-xs text-[#111827]/40 italic">No roster data available.</p>;
                   }
                   return (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {members.map((m: any, i: number) => (
-                        <div key={i}
-                          className={`flex items-start gap-3 p-3 border rounded-sm ${
-                            m.participantType === 'LEADER'
-                              ? 'border-[#E5005A]/40 bg-[#E5005A]/5'
-                              : 'border-[#111827]/15 bg-[#111827]/3'
-                          }`}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${
-                            m.participantType === 'LEADER' ? 'bg-[#E5005A] text-white' : 'bg-[#111827]/10 text-[#111827]'
-                          }`}>
-                            {(m.fullName || m.name || '?').charAt(0)}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-sm">{m.fullName || m.name}</span>
-                              {m.participantType === 'LEADER' && (
-                                <span className="text-[9px] font-bold bg-[#E5005A] text-white px-1.5 py-0.5">LEADER</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {members.map((m: any, i: number) => {
+                        const isLeader = i === 0;
+                        const idDrive = getDriveInfo(m.idCardUrl);
+                        return (
+                          <div
+                            key={i}
+                            className={`p-3 border-2 rounded-xs flex flex-col justify-between gap-2.5 ${
+                              isLeader
+                                ? 'border-[#E5005A] bg-[#FFFDF0] shadow-[2px_2px_0_0_#E5005A]'
+                                : 'border-[#111827] bg-[#FFFDF0] shadow-[2px_2px_0_0_#111827]'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-bold border ${
+                                  isLeader
+                                    ? 'bg-[#E5005A] text-white border-[#111827]'
+                                    : 'bg-[#111827] text-white border-[#111827]'
+                                }`}
+                              >
+                                {(m.fullName || m.name || '?').charAt(0)}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-sm text-[#111827]">{m.fullName || m.name}</span>
+                                  {isLeader && (
+                                    <span className="text-[9px] font-pixel bg-[#E5005A] text-white px-1.5 py-0.5 border border-[#111827]">
+                                      LEADER
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-gray-700 font-mono mt-0.5">
+                                  {m.studentId} · {m.branch} · {m.year}
+                                </p>
+                                <p className="text-[11px] text-gray-600 truncate">{m.college || m.collegeName || 'SFIT'}</p>
+                                <p className="text-[11px] text-[#00AFC6] font-mono truncate">{m.email}</p>
+                              </div>
+                            </div>
+
+                            {/* ID Card preview strip */}
+                            <div className="pt-2 border-t border-[#111827]/15 flex items-center justify-between gap-2">
+                              {m.idCardUrl ? (
+                                <>
+                                  <div
+                                    onClick={() => setPreviewModal({
+                                      url: m.idCardUrl,
+                                      title: `College ID Card - ${m.fullName || m.name}`,
+                                      subtitle: `${m.studentId} · ${m.college || 'SFIT'}`
+                                    })}
+                                    className="w-14 h-9 border border-[#111827] bg-[#111827]/10 rounded-xs overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#E5005A] shrink-0 flex items-center justify-center shadow-[1px_1px_0_0_#111827]"
+                                    title="Click to preview College ID Card"
+                                  >
+                                    <img
+                                      src={idDrive.isDrive ? idDrive.thumbUrl : m.idCardUrl}
+                                      alt="ID Card preview"
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewModal({
+                                        url: m.idCardUrl,
+                                        title: `College ID Card - ${m.fullName || m.name}`,
+                                        subtitle: `${m.studentId} · ${m.college || 'SFIT'}`
+                                      })}
+                                      className="inline-flex items-center gap-1 bg-[#111827] hover:bg-[#E5005A] text-white text-[10px] font-arcade px-2.5 py-1 border border-[#111827] shadow-[1px_1px_0_0_#000] cursor-pointer"
+                                    >
+                                      <Eye className="w-3 h-3 text-[#38bdf8]" /> PREVIEW ID
+                                    </button>
+                                    <a
+                                      href={idDrive.openUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-[10px] text-[#00AFC6] hover:underline flex items-center gap-0.5"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                </>
+                              ) : (
+                                <span className="text-[10px] text-amber-600 font-bold font-arcade">ID Card: Pending Upload</span>
                               )}
                             </div>
-                            <p className="text-[11px] text-[#111827]/50">{m.studentId} · {m.branch} · {m.year}</p>
-                            <p className="text-[11px] text-[#111827]/40 truncate">{m.college || m.collegeName}</p>
-                            <p className="text-[11px] text-[#111827]/50">{m.email}</p>
-                            {m.idCardUrl && (
-                              <a href={m.idCardUrl} target="_blank" rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-[10px] text-[#00AFC6] font-bold hover:underline mt-0.5">
-                                <Eye className="w-3 h-3" /> View ID Card
-                              </a>
-                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })()}
@@ -1062,8 +1616,9 @@ export const AdminPage: React.FC = () => {
 
               <div className="flex justify-end pt-2">
                 <button
+                  type="button"
                   onClick={() => setSelectedReg(null)}
-                  className="bg-[#111827] text-white font-arcade text-xs px-6 py-2.5 border-2 border-[#111827] hover:bg-[#E5005A] transition-colors"
+                  className="bg-[#111827] text-white font-arcade text-xs px-6 py-2.5 border-2 border-[#111827] hover:bg-[#E5005A] transition-colors cursor-pointer"
                 >
                   CLOSE
                 </button>
@@ -1072,6 +1627,7 @@ export const AdminPage: React.FC = () => {
           </div>
         </div>
       )}
+
 
       {/* ---------------------------------------------------- */}
       {/* REJECT PAYMENT MODAL */}

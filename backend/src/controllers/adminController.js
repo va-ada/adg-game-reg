@@ -91,6 +91,22 @@ export async function getDashboardStats(req, res) {
   }
 }
 
+function resolvePaymentEvidence(p, regId) {
+  if (p?.evidence?.url) return p.evidence.url;
+  if (Array.isArray(p?.entries)) {
+    const entryWithUrl = p.entries.find(e => e?.evidence?.url);
+    if (entryWithUrl) return entryWithUrl.evidence.url;
+  }
+  if (regId) {
+    const doc = store.documents.find(d => 
+      d.registrationId === regId && 
+      (d.documentType === 'PAYMENT_PROOF' || d.documentType === 'PAYMENT_EVIDENCE' || (d.ownerName && d.ownerName.toLowerCase().includes('payment')))
+    );
+    if (doc?.url) return doc.url;
+  }
+  return null;
+}
+
 export async function getAdminRegistrations(req, res) {
   try {
     const { search, status, teamSize } = req.query;
@@ -114,17 +130,39 @@ export async function getAdminRegistrations(req, res) {
       list = list.filter(r => r.teamSize === Number(teamSize));
     }
 
-    // Enrich with payment info
+    // Enrich with payment and team roster info
     const enriched = list.map(r => {
       const p = store.payments.find(pay => pay.registrationId === r.registrationId);
       const team = store.teams.find(t => t.registrationId === r.registrationId || t._id === r.teamId);
+      const evidenceUrl = resolvePaymentEvidence(p, r.registrationId);
+
+      let players = [];
+      if (team && Array.isArray(team.memberIds)) {
+        players = team.memberIds.map((mid, idx) => {
+          const stu = store.students.find(s => String(s._id) === String(mid));
+          if (!stu) return null;
+          return {
+            fullName: stu.fullName,
+            studentId: stu.studentId,
+            email: stu.email,
+            mobile: stu.mobile,
+            branch: stu.branch,
+            year: stu.year,
+            college: stu.college || (stu.isSfit ? 'SFIT' : 'External'),
+            idCardUrl: stu.idCardUrl || null,
+            participantType: idx === 0 ? 'LEADER' : 'MEMBER'
+          };
+        }).filter(Boolean);
+      }
+
       return {
         ...r,
         paymentStatus: p ? p.status : 'NOT_STARTED',
         paymentMethod: p ? p.method : 'N/A',
-        paymentEvidence: p?.evidence?.url || null,
-        transactionReference: p?.transactionReference || null,
-        teamId: team?.teamId || 'N/A'
+        paymentEvidence: evidenceUrl,
+        transactionReference: p?.transactionReference || (p?.entries?.[0]?.transactionReference) || null,
+        teamId: team?.teamId || 'N/A',
+        players
       };
     });
 
@@ -175,16 +213,21 @@ export async function getAdminTeams(req, res) {
     const enrichedTeams = store.teams.map(t => {
       const reg = store.registrations.find(r => r.registrationId === t.registrationId);
       const pay = store.payments.find(p => p.registrationId === t.registrationId);
-      const members = store.students
-        .filter(s => t.memberIds.includes(s._id) || t.memberIds.includes(String(s._id)))
-        .map(s => ({
+      const members = (t.memberIds || []).map((mid, idx) => {
+        const s = store.students.find(st => String(st._id) === String(mid));
+        if (!s) return null;
+        return {
           ...s,
-          participantType: String(t.leaderId) === String(s._id) ? 'LEADER' : 'MEMBER'
-        }));
+          idCardUrl: s.idCardUrl || null,
+          participantType: idx === 0 ? 'LEADER' : 'MEMBER'
+        };
+      }).filter(Boolean);
+
       return {
         ...t,
         registrationStatus: reg?.status || 'UNKNOWN',
         paymentStatus: pay?.status || 'NOT_STARTED',
+        paymentEvidence: resolvePaymentEvidence(pay, t.registrationId),
         members
       };
     });
@@ -206,11 +249,14 @@ export async function getAdminPayments(req, res) {
       const expected = p.amountExpected || expectedAmountForTeamSize(reg?.teamSize);
       const paid = totalSubmitted(p);
 
-      // Resolve team roster from the Team record
+      const resolvedEvidenceUrl = resolvePaymentEvidence(p, p.registrationId);
+      const evidence = p.evidence?.url ? p.evidence : (resolvedEvidenceUrl ? { url: resolvedEvidenceUrl } : null);
+
+      // Resolve team roster from the Team record in registration order
       const team = store.teams.find(t => t.registrationId === p.registrationId);
       let roster = [];
       if (team && Array.isArray(team.memberIds)) {
-        roster = team.memberIds.map(mid => {
+        roster = team.memberIds.map((mid, idx) => {
           const stu = store.students.find(s => String(s._id) === String(mid));
           if (!stu) return null;
           return {
@@ -222,14 +268,24 @@ export async function getAdminPayments(req, res) {
             year: stu.year,
             college: stu.college || (stu.isSfit ? 'SFIT' : 'External'),
             gender: stu.gender,
-            participantType: String(team.leaderId) === String(stu._id) ? 'LEADER' : 'MEMBER'
+            idCardUrl: stu.idCardUrl || null,
+            participantType: idx === 0 ? 'LEADER' : 'MEMBER'
           };
         }).filter(Boolean);
       }
 
+      // Enrich entries with evidence if missing
+      const entries = (Array.isArray(p.entries) ? p.entries : []).map(entry => {
+        if (!entry.evidence?.url && resolvedEvidenceUrl) {
+          return { ...entry, evidence: { url: resolvedEvidenceUrl } };
+        }
+        return entry;
+      });
+
       return {
         ...p,
-        entries: Array.isArray(p.entries) ? p.entries : [],
+        evidence,
+        entries,
         amountExpected: expected,
         amountPaid: paid,
         amountRemaining: Math.max(0, expected - paid),

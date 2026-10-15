@@ -200,12 +200,14 @@ export class RegistrationService {
     const invoice = store.invoices.find(i => i.registrationId === registrationId);
 
     const studentIds = team ? team.memberIds : [];
-    const members = store.students
-      .filter(s => studentIds.includes(s._id) || studentIds.includes(String(s._id)))
-      .map(s => ({
+    const members = (studentIds || []).map((mid, idx) => {
+      const s = store.students.find(st => String(st._id) === String(mid));
+      if (!s) return null;
+      return {
         ...s,
-        participantType: team && String(team.leaderId) === String(s._id) ? 'LEADER' : 'MEMBER'
-      }));
+        participantType: idx === 0 ? 'LEADER' : 'MEMBER'
+      };
+    }).filter(Boolean);
 
     // The squad needs to know what it still owes; derive it rather than letting the
     // page guess, so the figure cannot drift from the server's own threshold.
