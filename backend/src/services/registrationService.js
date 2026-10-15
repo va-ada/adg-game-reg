@@ -59,8 +59,13 @@ export class RegistrationService {
         throw new Error(`Player ${playerNum}: Mobile number is required.`);
       }
       // Indian mobile numbers: 10 digits starting 6-9, tolerating +91 / 0 prefixes
-      // and any spacing or dashes the student typed.
-      const digits = p.mobile.replace(/[\s\-()]/g, '').replace(/^(\+91|0091|91|0)/, '');
+      // and any spacing or dashes the student typed. Note: 10-digit numbers starting
+      // with 91 are preserved (only strip 91 when 10 digits follow).
+      const digits = p.mobile
+        .replace(/[\s\-()]/g, '')
+        .replace(/^(\+91|0091)/, '')
+        .replace(/^0(?=\d{10}$)/, '')
+        .replace(/^91(?=\d{10}$)/, '');
       if (!/^[6-9]\d{9}$/.test(digits)) {
         throw new Error(`Player ${playerNum}: "${p.mobile}" is not a valid 10-digit Indian mobile number.`);
       }

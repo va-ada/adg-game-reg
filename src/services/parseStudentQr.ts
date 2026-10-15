@@ -97,9 +97,11 @@ export function parseStudentQr(raw: string): ScannedStudent | null {
     fullName: pick(ALIASES.fullName),
     college: pick(ALIASES.college),
     studentId: pick(ALIASES.studentId),
-    email: pick(ALIASES.email),
-    mobile: pick(ALIASES.mobile)?.replace(/[\s\-()]/g, '').replace(/^(\+91|0091|91|0)/, ''),
-    branch: toBranch(pick(ALIASES.branch)),
+    mobile: pick(ALIASES.mobile)
+      ?.replace(/[\s\-()]/g, '')
+      .replace(/^(\+91|0091)/, '')
+      .replace(/^0(?=\d{10}$)/, '')
+      .replace(/^91(?=\d{10}$)/, ''),
     year: toYear(pick(ALIASES.year))
   };
 
