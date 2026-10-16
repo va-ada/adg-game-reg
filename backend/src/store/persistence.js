@@ -10,8 +10,13 @@
  *
  * Writes are flushed at request boundaries (see server.ts), on a periodic safety timer,
  * and on shutdown, so the worst case loss is an in-flight request rather than everything.
+ *
+ * Only documents that changed since they were last read or written are sent. Rewriting
+ * the whole set on every request sent ~30 MB to Atlas per save (ID cards and payment
+ * screenshots live inline in some documents) and used up the host's bandwidth.
  */
 
+import { createHash } from 'crypto';
 import mongoose from 'mongoose';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 
@@ -30,6 +35,19 @@ let timer = null;
 // away: a shutdown that returns early while a write is still travelling to Atlas
 // reports success and then kills the very write it was supposed to wait for.
 let inFlight = null;
+// What each document looked like when it last matched the database, per collection
+// (name -> Map(_id -> fingerprint)). A document whose fingerprint differs - including a
+// brand-new one - is written; everything else is skipped.
+const synced = new Map();
+
+function fingerprint(doc) {
+  return createHash('sha1').update(JSON.stringify(doc)).digest('base64');
+}
+
+function syncedFor(name) {
+  if (!synced.has(name)) synced.set(name, new Map());
+  return synced.get(name);
+}
 
 export function isEnabled() {
   return enabled;
@@ -62,6 +80,10 @@ export async function hydrate(store) {
       // Strip the driver's own _id handling: our records carry their own string _id.
       store[name] = docs.map(({ __mongoId, ...rest }) => rest);
       loaded[name] = docs.length;
+      // Record them as in sync before the migrations below run, so anything a
+      // migration changes is written back on the next flush.
+      const seen = syncedFor(name);
+      for (const doc of store[name]) seen.set(doc._id, fingerprint(doc));
     }
   }
 
@@ -161,10 +183,20 @@ export async function flush(store, { force = false } = {}) {
         const rows = store[name];
         if (!Array.isArray(rows) || rows.length === 0) continue;
 
-        const ops = rows.map(doc => ({
+        const seen = syncedFor(name);
+        const changed = [];
+        for (const doc of rows) {
+          const fp = fingerprint(doc);
+          if (seen.get(doc._id) !== fp) changed.push({ doc, fp });
+        }
+        if (changed.length === 0) continue;
+
+        const ops = changed.map(({ doc }) => ({
           replaceOne: { filter: { _id: doc._id }, replacement: doc, upsert: true }
         }));
         await db().collection(name).bulkWrite(ops, { ordered: false });
+        // Only after Atlas accepted them; a failed write leaves them marked as changed.
+        for (const { doc, fp } of changed) seen.set(doc._id, fp);
       }
 
       await db().collection(META).replaceOne(
